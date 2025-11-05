@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using System.Collections;
-using System.Collections.Generic;
 using MathHighLow.Models;
 using MathHighLow.Services;
 
@@ -13,8 +12,8 @@ namespace MathHighLow.Controllers
     /// 
     /// ✅ 새로운 카드 분배 규칙:
     /// 1. 기본 연산자 카드 3장 (+, -, ÷) 자동 제공
-    /// 2. 숫자 카드 3장 무조건 보장
-    /// 3. 특수 카드(×, √) 나오면 → 숫자 카드 1장 추가
+    /// 2. 숫자/특수 혼합으로 초기 3장을 공개
+    /// 3. 숫자 카드가 3장이 될 때까지 즉시 보충 (특수 카드는 그대로 유지)
     /// 4. AI도 동일 (남은 카드로)
     /// </summary>
     public class RoundController : MonoBehaviour
@@ -222,57 +221,58 @@ namespace MathHighLow.Controllers
             }
 
             // --- 2단계: 숫자 카드 3장 무조건 보장 ---
-            Debug.Log("[RoundController] 2단계: 숫자 카드 3장 뽑기");
+            Debug.Log("[RoundController] 2단계: 초기 3장 분배 및 특수 카드 확인");
 
             int numberCardsDrawn = 0;
-            List<Card> specialCards = new List<Card>(); // 특수 카드 임시 저장
+            int cardsDealt = 0;
+            int specialCardsDrawn = 0;
 
+            // 1) 우선 3장을 뽑아서 공개한다 (숫자/특수 혼합 가능)
+            while (cardsDealt < 3)
+            {
+                Card drawnCard = deckService.DrawSlotCard();
+                cardsDealt++;
+
+                if (drawnCard.GetCardType() == "Number")
+                {
+                    numberCardsDrawn++;
+                    Debug.Log($"[RoundController] 숫자 카드: {drawnCard.GetDisplayText()} ({numberCardsDrawn}/3)");
+                }
+                else if (drawnCard.GetCardType() == "Special")
+                {
+                    specialCardsDrawn++;
+                    Debug.Log($"[RoundController] 특수 카드 발견 (초기): {drawnCard.GetDisplayText()}");
+                }
+
+                playerHand.AddCard(drawnCard);
+                GameEvents.InvokeCardAdded(drawnCard, true);
+
+                yield return new WaitForSeconds(config.DealInterval);
+            }
+
+            // 2) 숫자 카드가 3장이 될 때까지 계속 뽑아서 보충한다.
             while (numberCardsDrawn < 3)
             {
                 Card drawnCard = deckService.DrawSlotCard();
 
                 if (drawnCard.GetCardType() == "Number")
                 {
-                    // 숫자 카드: 즉시 추가
-                    playerHand.AddCard(drawnCard);
-                    GameEvents.InvokeCardAdded(drawnCard, true);
                     numberCardsDrawn++;
-
-                    Debug.Log($"[RoundController] 숫자 카드: {drawnCard.GetDisplayText()} ({numberCardsDrawn}/3)");
+                    Debug.Log($"[RoundController] 숫자 카드 보충: {drawnCard.GetDisplayText()} ({numberCardsDrawn}/3)");
                 }
                 else if (drawnCard.GetCardType() == "Special")
                 {
-                    // 특수 카드: 저장 (나중에 추가)
-                    specialCards.Add(drawnCard);
-                    Debug.Log($"[RoundController] 특수 카드 발견: {drawnCard.GetDisplayText()}");
+                    specialCardsDrawn++;
+                    Debug.Log($"[RoundController] 특수 카드 추가 발견: {drawnCard.GetDisplayText()}");
                 }
+
+                playerHand.AddCard(drawnCard);
+                GameEvents.InvokeCardAdded(drawnCard, true);
 
                 yield return new WaitForSeconds(config.DealInterval);
             }
 
-            // --- 3단계: 특수 카드가 있으면 → 숫자 카드 추가로 뽑기 ---
-            if (specialCards.Count > 0)
-            {
-                Debug.Log($"[RoundController] 3단계: 특수 카드 {specialCards.Count}장 → 숫자 카드 {specialCards.Count}장 추가");
-
-                foreach (var specialCard in specialCards)
-                {
-                    // 특수 카드 추가
-                    playerHand.AddCard(specialCard);
-                    GameEvents.InvokeCardAdded(specialCard, true);
-
-                    yield return new WaitForSeconds(config.DealInterval);
-
-                    // 숫자 카드 1장 추가로 뽑기
-                    Card extraNumber = DrawNumberCardOnly();
-                    playerHand.AddCard(extraNumber);
-                    GameEvents.InvokeCardAdded(extraNumber, true);
-
-                    Debug.Log($"[RoundController] 특수 카드 {specialCard.GetDisplayText()} → 숫자 추가 {extraNumber.GetDisplayText()}");
-
-                    yield return new WaitForSeconds(config.DealInterval);
-                }
-            }
+            Debug.Log($"[RoundController] 숫자 3장 확보 완료 (특수 {specialCardsDrawn}장)");
 
             Debug.Log($"[RoundController] === 플레이어 카드 분배 완료: 총 {playerHand.GetTotalCardCount()}장 ===");
         }
@@ -300,45 +300,54 @@ namespace MathHighLow.Controllers
                 yield return new WaitForSeconds(config.DealInterval);
             }
 
-            // --- 2단계: 숫자 카드 3장 무조건 보장 (남은 카드에서) ---
+            // --- 2단계: 초기 3장 분배 및 특수 카드 확인 (남은 카드에서) ---
             int numberCardsDrawn = 0;
-            List<Card> specialCards = new List<Card>();
+            int cardsDealt = 0;
+            int specialCardsDrawn = 0;
 
-            while (numberCardsDrawn < 3)
+            while (cardsDealt < 3)
             {
-                Card drawnCard = deckService.DrawSlotCard(); // 남은 카드에서 뽑기
+                Card drawnCard = deckService.DrawSlotCard();
+                cardsDealt++;
 
                 if (drawnCard.GetCardType() == "Number")
                 {
-                    aiHand.AddCard(drawnCard);
-                    GameEvents.InvokeCardAdded(drawnCard, false);
                     numberCardsDrawn++;
                 }
                 else if (drawnCard.GetCardType() == "Special")
                 {
-                    specialCards.Add(drawnCard);
+                    specialCardsDrawn++;
+                    Debug.Log($"[RoundController] (AI) 특수 카드 발견 (초기): {drawnCard.GetDisplayText()}");
                 }
+
+                aiHand.AddCard(drawnCard);
+                GameEvents.InvokeCardAdded(drawnCard, false);
 
                 yield return new WaitForSeconds(config.DealInterval);
             }
 
-            // --- 3단계: 특수 카드가 있으면 → 숫자 카드 추가로 뽑기 ---
-            if (specialCards.Count > 0)
+            // --- 3단계: 숫자 카드가 3장이 될 때까지 계속 보충 ---
+            while (numberCardsDrawn < 3)
             {
-                foreach (var specialCard in specialCards)
+                Card drawnCard = deckService.DrawSlotCard();
+
+                if (drawnCard.GetCardType() == "Number")
                 {
-                    aiHand.AddCard(specialCard);
-                    GameEvents.InvokeCardAdded(specialCard, false);
-
-                    yield return new WaitForSeconds(config.DealInterval);
-
-                    Card extraNumber = DrawNumberCardOnly();
-                    aiHand.AddCard(extraNumber);
-                    GameEvents.InvokeCardAdded(extraNumber, false);
-
-                    yield return new WaitForSeconds(config.DealInterval);
+                    numberCardsDrawn++;
                 }
+                else if (drawnCard.GetCardType() == "Special")
+                {
+                    specialCardsDrawn++;
+                    Debug.Log($"[RoundController] (AI) 특수 카드 추가 발견: {drawnCard.GetDisplayText()}");
+                }
+
+                aiHand.AddCard(drawnCard);
+                GameEvents.InvokeCardAdded(drawnCard, false);
+
+                yield return new WaitForSeconds(config.DealInterval);
             }
+
+            Debug.Log($"[RoundController] (AI) 숫자 3장 확보 완료 (특수 {specialCardsDrawn}장)");
 
             Debug.Log($"[RoundController] === AI 카드 분배 완료: 총 {aiHand.GetTotalCardCount()}장 ===");
         }
