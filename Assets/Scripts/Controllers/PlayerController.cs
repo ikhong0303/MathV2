@@ -1,4 +1,4 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using System.Collections.Generic;
 using MathHighLow.Models;
 using MathHighLow.Services;
@@ -7,251 +7,220 @@ using System.Linq;
 namespace MathHighLow.Controllers
 {
     /// <summary>
-    /// [ÇĞ½À Æ÷ÀÎÆ®] ÀÌº¥Æ® ±¸µ¶ ¹× ¸ğµ¨ ¾÷µ¥ÀÌÆ®
+    /// âœ… ìƒˆë¡œìš´ êµ¬ì¡°: ëª¨ë“  ì¹´ë“œë¥¼ í´ë¦­ìœ¼ë¡œ ì²˜ë¦¬
     /// 
-    /// ÇÃ·¹ÀÌ¾îÀÇ ÀÔ·ÂÀ» ¹Ş¾Æ(Events)
-    /// ¼ö½Ä µ¥ÀÌÅÍ(Expression)¸¦ °ü¸®(Update Model)ÇÕ´Ï´Ù.
-    /// UI(View)¿Í Á÷Á¢ Åë½ÅÇÏÁö ¾Ê°í, GameEvents¸¦ ÅëÇØ »óÈ£ÀÛ¿ëÇÕ´Ï´Ù.
+    /// - ìˆ«ì ì¹´ë“œ í´ë¦­: ìˆ˜ì‹ì— ìˆ«ì ì¶”ê°€
+    /// - ì—°ì‚°ì ì¹´ë“œ í´ë¦­: ìˆ˜ì‹ì— ì—°ì‚°ì ì¶”ê°€
+    /// - íŠ¹ìˆ˜ ì¹´ë“œ (Ã—, âˆš): ìë™ìœ¼ë¡œ ì²˜ë¦¬ (í´ë¦­ ë¶ˆê°€)
+    /// 
+    /// UI ë²„íŠ¼ ì—†ìŒ! ì˜¤ì§ ì¹´ë“œë§Œ í´ë¦­!
     /// </summary>
     public class PlayerController : MonoBehaviour
     {
-        // --- ÇöÀç ¶ó¿îµå »óÅÂ ---
-
-        /// <summary>
-        /// ÀÌ¹ø ¶ó¿îµå¿¡ ¹ŞÀº ¼ÕÆĞ
-        /// </summary>
+        // --- í˜„ì¬ ë¼ìš´ë“œ ìƒíƒœ ---
         private Hand currentHand;
-
-        /// <summary>
-        /// ÇÃ·¹ÀÌ¾î°¡ ÇöÀç Á¶¸³ ÁßÀÎ ¼ö½Ä
-        /// </summary>
         private Expression currentExpression;
 
-        // --- Ä«µå »ç¿ë·® ÃßÀû ---
+        // --- ì¹´ë“œ ì‚¬ìš©ëŸ‰ ì¶”ì  ---
+        private Dictionary<Card, bool> usedCards; // ëª¨ë“  ì¹´ë“œ ì¶”ì  (ìˆ«ì + ì—°ì‚°ì)
 
         /// <summary>
-        /// »ç¿ëÇÑ ¼ıÀÚ Ä«µå¸¦ ÃßÀûÇÕ´Ï´Ù. (Áßº¹ »ç¿ë ¹æÁö)
-        /// Key: ¼ÕÆĞÀÇ NumberCard °´Ã¼, Value: »ç¿ë ¿©ºÎ
-        /// </summary>
-        private Dictionary<NumberCard, bool> usedNumberCards;
-
-        /// <summary>
-        /// »ç¿ëÇÑ ¡î Ä«µå °³¼ö
-        /// </summary>
-        private int usedSqrtCount;
-
-        /// <summary>
-        /// »ç¿ëÇÑ ¡¿ Ä«µå °³¼ö
-        /// </summary>
-        private int usedMultiplyCount;
-
-        /// <summary>
-        /// ¡î ¹öÆ°À» ¹æ±İ ´­·¶´ÂÁö ¿©ºÎ (´ÙÀ½ ¼ıÀÚ¿¡ Àû¿ë)
-        /// </summary>
-        private bool nextNumberHasSqrt;
-
-        /// <summary>
-        /// ÄÁÆ®·Ñ·¯ ÃÊ±âÈ­ (GameController°¡ È£Ãâ)
+        /// ì»¨íŠ¸ë¡¤ëŸ¬ ì´ˆê¸°í™”
         /// </summary>
         public void Initialize()
         {
             currentExpression = new Expression();
-            usedNumberCards = new Dictionary<NumberCard, bool>();
+            usedCards = new Dictionary<Card, bool>();
         }
 
-        #region Unity »ı¸íÁÖ±â ¹× ÀÌº¥Æ® ±¸µ¶
+        #region Unity ìƒëª…ì£¼ê¸° ë° ì´ë²¤íŠ¸ êµ¬ë…
 
         void OnEnable()
         {
-            // [ÇĞ½À Æ÷ÀÎÆ®] ÀÌº¥Æ® ±¸µ¶
-            // UI(View)³ª ´Ù¸¥ ½Ã½ºÅÛ¿¡¼­ ¹ßÇàÇÏ´Â ÀÌº¥Æ®¸¦ ¼ö½ÅÇÕ´Ï´Ù.
-
-            // ¶ó¿îµå ½ÃÀÛ/¸®¼Â
             GameEvents.OnRoundStarted += HandleRoundStarted;
             GameEvents.OnResetClicked += HandleResetClicked;
-
-            // Ä«µå/¿¬»êÀÚ ÀÔ·Â
             GameEvents.OnCardClicked += HandleCardClicked;
-            GameEvents.OnOperatorSelected += HandleOperatorSelected;
-            GameEvents.OnSquareRootClicked += HandleSquareRootClicked;
         }
 
         void OnDisable()
         {
-            // [ÇĞ½À Æ÷ÀÎÆ®] ÀÌº¥Æ® ±¸µ¶ ÇØÁ¦
             GameEvents.OnRoundStarted -= HandleRoundStarted;
             GameEvents.OnResetClicked -= HandleResetClicked;
-
             GameEvents.OnCardClicked -= HandleCardClicked;
-            GameEvents.OnOperatorSelected -= HandleOperatorSelected;
-            GameEvents.OnSquareRootClicked -= HandleSquareRootClicked;
         }
 
         #endregion
 
-        #region °ø°³ ¸Ş¼­µå (´Ù¸¥ ÄÁÆ®·Ñ·¯°¡ È£Ãâ)
+        #region ê³µê°œ ë©”ì„œë“œ
 
-        /// <summary>
-        /// RoundController°¡ »õ ¶ó¿îµåÀÇ ¼ÕÆĞ¸¦ ¼³Á¤ÇÕ´Ï´Ù.
-        /// </summary>
         public void SetHand(Hand hand)
         {
             currentHand = hand;
-            ResetExpressionState(); // ¼ÕÆĞ°¡ ¹Ù²î¾úÀ¸´Ï ¼ö½Ä ÃÊ±âÈ­
+            ResetExpressionState();
         }
 
-        /// <summary>
-        /// RoundController°¡ Æò°¡¸¦ À§ÇØ ÇöÀç ¼ö½ÄÀ» °¡Á®°©´Ï´Ù.
-        /// </summary>
         public Expression GetExpression()
         {
-            // [ÇĞ½À Æ÷ÀÎÆ®] ¹æ¾îÀû º¹»ç (Defensive Copy)
-            // ¿øº»ÀÌ ¾Æ´Ñ º¹Á¦º»À» Àü´ŞÇÏ¿©, ¿ÜºÎ¿¡¼­ ¼ö½ÄÀ» ¼öÁ¤ÇÏ´Â °ÍÀ» ¹æÁöÇÕ´Ï´Ù.
             return currentExpression.Clone();
         }
 
         #endregion
 
-        #region ÀÌº¥Æ® ÇÚµé·¯
+        #region ì´ë²¤íŠ¸ í•¸ë“¤ëŸ¬
 
-        /// <summary>
-        /// »õ ¶ó¿îµå ½ÃÀÛ ½Ã È£ÃâµË´Ï´Ù.
-        /// </summary>
         private void HandleRoundStarted()
         {
             ResetExpressionState();
-            GameEvents.InvokeExpressionUpdated(""); // [Ãß°¡] UI ÅØ½ºÆ® ÃÊ±âÈ­
+            GameEvents.InvokeExpressionUpdated("");
         }
 
-        /// <summary>
-        /// ¸®¼Â ¹öÆ° Å¬¸¯ ½Ã È£ÃâµË´Ï´Ù.
-        /// </summary>
         private void HandleResetClicked()
         {
             ResetExpressionState();
-            GameEvents.InvokeExpressionUpdated(""); // [Ãß°¡] UI ÅØ½ºÆ® ÃÊ±âÈ­
-            // (¼±ÅÃ »çÇ×) UI¿¡°Ôµµ ¼ö½ÄÀÌ ¸®¼ÂµÇ¾úÀ½À» ¾Ë¸± ¼ö ÀÖ½À´Ï´Ù.
-            // GameEvents.InvokeExpressionReset();
+            GameEvents.InvokeExpressionUpdated("");
         }
 
         /// <summary>
-        /// Ä«µå Å¬¸¯ ÀÌº¥Æ® Ã³¸® (ÇöÀç´Â ¼ıÀÚ Ä«µå¸¸ Å¬¸¯ °¡´ÉÇÏ´Ù°í °¡Á¤)
+        /// âœ… ì™„ì „íˆ ìƒˆë¡œìš´ ì¹´ë“œ í´ë¦­ ì²˜ë¦¬
+        /// - ìˆ«ì ì¹´ë“œ í´ë¦­ â†’ ìˆ˜ì‹ì— ìˆ«ì ì¶”ê°€
+        /// - ì—°ì‚°ì ì¹´ë“œ í´ë¦­ â†’ ìˆ˜ì‹ì— ì—°ì‚°ì ì¶”ê°€
+        /// - íŠ¹ìˆ˜ ì¹´ë“œ í´ë¦­ â†’ ë¬´ì‹œ (ìë™ ì²˜ë¦¬ë¨)
         /// </summary>
         private void HandleCardClicked(Card card)
         {
-            // 1. ¼ıÀÚ Ä«µå°¡ ¾Æ´Ï¸é ¹«½Ã
-            if (card is not NumberCard numberCard) return;
-
-            // 2. ¼ÕÆĞ¿¡ ¾ø´Â Ä«µå°Å³ª, ÀÌ¹Ì »ç¿ëÇÑ Ä«µå¸é ¹«½Ã
-            if (!currentHand.NumberCards.Contains(numberCard) ||
-                (usedNumberCards.ContainsKey(numberCard) && usedNumberCards[numberCard]))
+            // 1. null ì²´í¬
+            if (card == null)
             {
+                Debug.LogWarning("[PlayerController] í´ë¦­ëœ ì¹´ë“œê°€ nullì…ë‹ˆë‹¤.");
                 return;
             }
 
-            // 3. ¼ö½Ä »óÅÂ°¡ '¼ıÀÚ'¸¦ ±â´ëÇÏ´Â »óÅÂ°¡ ¾Æ´Ï¸é ¹«½Ã
-            if (!currentExpression.ExpectingNumber())
+            // 2. currentHand null ì²´í¬
+            if (currentHand == null)
             {
+                Debug.LogWarning("[PlayerController] ì†íŒ¨ê°€ ì„¤ì •ë˜ì§€ ì•Šì•˜ìŠµë‹ˆë‹¤.");
                 return;
             }
 
-            // [·ÎÁ÷] ¼ö½Ä¿¡ ¼ıÀÚ Ãß°¡
-            usedNumberCards[numberCard] = true;
-            currentExpression.AddNumber(numberCard.Value, nextNumberHasSqrt);
+            // 3. ì´ë¯¸ ì‚¬ìš©í•œ ì¹´ë“œì¸ì§€ í™•ì¸
+            if (usedCards.ContainsKey(card) && usedCards[card])
+            {
+                Debug.Log("[PlayerController] ì´ë¯¸ ì‚¬ìš©í•œ ì¹´ë“œì…ë‹ˆë‹¤.");
+                return;
+            }
 
-            // ¡î ÇÃ·¡±× ÃÊ±âÈ­
-            nextNumberHasSqrt = false;
-            GameEvents.InvokeExpressionUpdated(currentExpression.ToDisplayString()); // [Ãß°¡]
-            // (¼±ÅÃ »çÇ×) UI ¾÷µ¥ÀÌÆ®¸¦ À§ÇØ ÀÌº¥Æ® ¹ßÇà
-            // GameEvents.InvokeExpressionUpdated(currentExpression.ToDisplayString());
+            // 4. ì¹´ë“œ íƒ€ì…ë³„ ì²˜ë¦¬
+            if (card is NumberCard numberCard)
+            {
+                HandleNumberCardClicked(numberCard);
+            }
+            else if (card is OperatorCard operatorCard)
+            {
+                HandleOperatorCardClicked(operatorCard);
+            }
+            else if (card is SpecialCard)
+            {
+                // íŠ¹ìˆ˜ ì¹´ë“œëŠ” ìë™ìœ¼ë¡œ ì²˜ë¦¬ë˜ë¯€ë¡œ í´ë¦­ ë¶ˆê°€
+                Debug.Log("[PlayerController] íŠ¹ìˆ˜ ì¹´ë“œëŠ” í´ë¦­í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.");
+            }
         }
 
         /// <summary>
-        /// ¿¬»êÀÚ ¹öÆ° Å¬¸¯ ÀÌº¥Æ® Ã³¸®
+        /// âœ… ìˆ«ì ì¹´ë“œ í´ë¦­ ì²˜ë¦¬
         /// </summary>
-        private void HandleOperatorSelected(OperatorCard.OperatorType op)
+        private void HandleNumberCardClicked(NumberCard numberCard)
         {
-            // 1. ¼ö½Ä »óÅÂ°¡ '¿¬»êÀÚ'¸¦ ±â´ëÇÏ´Â »óÅÂ°¡ ¾Æ´Ï¸é ¹«½Ã
+            // 1. ìˆ˜ì‹ì´ ìˆ«ìë¥¼ ê¸°ëŒ€í•˜ëŠ” ìƒíƒœê°€ ì•„ë‹ˆë©´ ë¬´ì‹œ
+            if (!currentExpression.ExpectingNumber())
+            {
+                Debug.Log("[PlayerController] ì§€ê¸ˆì€ ì—°ì‚°ìë¥¼ ì„ íƒí•´ì•¼ í•©ë‹ˆë‹¤.");
+                return;
+            }
+
+            // 2. ì†íŒ¨ì— ìˆëŠ” ì¹´ë“œì¸ì§€ í™•ì¸
+            if (!currentHand.NumberCards.Contains(numberCard))
+            {
+                Debug.LogWarning("[PlayerController] ì†íŒ¨ì— ì—†ëŠ” ìˆ«ì ì¹´ë“œì…ë‹ˆë‹¤.");
+                return;
+            }
+
+            // 3. ìˆ˜ì‹ì— ìˆ«ì ì¶”ê°€ (âˆšëŠ” ìë™ìœ¼ë¡œ ì²˜ë¦¬ë˜ë¯€ë¡œ false)
+            currentExpression.AddNumber(numberCard.Value, false);
+            usedCards[numberCard] = true;
+
+            // 4. UI ì—…ë°ì´íŠ¸
+            GameEvents.InvokeExpressionUpdated(currentExpression.ToDisplayString());
+
+            Debug.Log($"[PlayerController] ìˆ«ì ì¶”ê°€: {numberCard.Value}");
+        }
+
+        /// <summary>
+        /// âœ… ì—°ì‚°ì ì¹´ë“œ í´ë¦­ ì²˜ë¦¬ (ìƒˆë¡œìš´ ê¸°ëŠ¥!)
+        /// </summary>
+        private void HandleOperatorCardClicked(OperatorCard operatorCard)
+        {
+            // 1. ìˆ˜ì‹ì´ ì—°ì‚°ìë¥¼ ê¸°ëŒ€í•˜ëŠ” ìƒíƒœê°€ ì•„ë‹ˆë©´ ë¬´ì‹œ
             if (currentExpression.ExpectingNumber() || currentExpression.IsEmpty())
             {
+                Debug.Log("[PlayerController] ì§€ê¸ˆì€ ìˆ«ìë¥¼ ì„ íƒí•´ì•¼ í•©ë‹ˆë‹¤.");
                 return;
             }
 
-            // 2. ¡î ÇÃ·¡±× ¸®¼Â (¿¬»êÀÚ°¡ ´­¸®¸é ¡î´Â Ãë¼ÒµÊ)
-            nextNumberHasSqrt = false;
+            // 2. ì†íŒ¨ì— ì—°ì‚°ì ì¹´ë“œê°€ ìˆëŠ”ì§€ í™•ì¸
+            // (ìƒˆ êµ¬ì¡°ì—ì„œëŠ” ê¸°ë³¸ ì—°ì‚°ìë¥¼ ì†íŒ¨ì— ì¹´ë“œë¡œ ë°›ìŒ)
+            // Handì— OperatorCard ë¦¬ìŠ¤íŠ¸ê°€ í•„ìš”í•¨ â†’ Hand.cs ìˆ˜ì • í•„ìš”!
 
-            // 3. »ç¿ë °¡´É ¿©ºÎ È®ÀÎ (ºñÈ°¼ºÈ­ ¶Ç´Â »ç¿ë·® ÃÊ°ú)
-            if (op == OperatorCard.OperatorType.Multiply)
+            // ì„ì‹œ: ê¸°ë³¸ ì—°ì‚°ìëŠ” í•­ìƒ ì‚¬ìš© ê°€ëŠ¥í•˜ë‹¤ê³  ê°€ì •
+            bool canUseOperator = true;
+
+            // Ã— ì—°ì‚°ìëŠ” íŠ¹ë³„ ì²˜ë¦¬ (íŠ¹ìˆ˜ ì¹´ë“œë¡œ ë°›ì•„ì•¼ í•¨)
+            if (operatorCard.Operator == OperatorCard.OperatorType.Multiply)
             {
-                if (usedMultiplyCount >= currentHand.GetMultiplyCount()) return; // ¡¿ °³¼ö ÃÊ°ú
-                usedMultiplyCount++;
+                // Ã—ëŠ” íŠ¹ìˆ˜ ì¹´ë“œì—ì„œë§Œ ì‚¬ìš© ê°€ëŠ¥
+                int multiplyCount = currentHand.GetMultiplyCount();
+                if (multiplyCount == 0)
+                {
+                    Debug.Log("[PlayerController] Ã— ì¹´ë“œê°€ ì†íŒ¨ì— ì—†ìŠµë‹ˆë‹¤.");
+                    return;
+                }
             }
-            else
+
+            if (!canUseOperator)
             {
-                if (!currentHand.IsOperatorEnabled(op)) return; // ºñÈ°¼ºÈ­µÈ ¿¬»êÀÚ
-            }
-
-            // [·ÎÁ÷] ¼ö½Ä¿¡ ¿¬»êÀÚ Ãß°¡
-            currentExpression.AddOperator(op);
-
-            // (¼±ÅÃ »çÇ×) UI ¾÷µ¥ÀÌÆ®¸¦ À§ÇØ ÀÌº¥Æ® ¹ßÇà
-            // GameEvents.InvokeExpressionUpdated(currentExpression.ToDisplayString());
-        }
-
-        /// <summary>
-        /// Á¦°ö±Ù(¡î) ¹öÆ° Å¬¸¯ ÀÌº¥Æ® Ã³¸®
-        /// </summary>
-        private void HandleSquareRootClicked()
-        {
-            // 1. ¼ö½Ä »óÅÂ°¡ '¼ıÀÚ'¸¦ ±â´ëÇÏ´Â »óÅÂ°¡ ¾Æ´Ï¸é ¹«½Ã
-            if (!currentExpression.ExpectingNumber())
-            {
+                Debug.Log("[PlayerController] ì‚¬ìš©í•  ìˆ˜ ì—†ëŠ” ì—°ì‚°ìì…ë‹ˆë‹¤.");
                 return;
             }
 
-            // 2. ¡î °³¼ö ÃÊ°ú ½Ã ¹«½Ã
-            if (usedSqrtCount >= currentHand.GetSquareRootCount())
-            {
-                return;
-            }
+            // 3. ìˆ˜ì‹ì— ì—°ì‚°ì ì¶”ê°€
+            currentExpression.AddOperator(operatorCard.Operator);
+            usedCards[operatorCard] = true;
 
-            // 3. ÀÌ¹Ì ¡î¸¦ ´©¸¥ »óÅÂ¸é ¹«½Ã (Áßº¹ ¹æÁö)
-            if (nextNumberHasSqrt) return;
+            // 4. UI ì—…ë°ì´íŠ¸
+            GameEvents.InvokeExpressionUpdated(currentExpression.ToDisplayString());
 
-            // [·ÎÁ÷] ´ÙÀ½ ¼ıÀÚ¿¡ ¡î¸¦ Àû¿ëÇÏµµ·Ï ÇÃ·¡±× ¼³Á¤
-            nextNumberHasSqrt = true;
-            usedSqrtCount++;
-
-            // UI ¾÷µ¥ÀÌÆ®¸¦ À§ÇØ ÀÌº¥Æ® ¹ßÇà
-            string currentText = currentExpression.ToDisplayString();
-            string prefix = currentText.Length > 0 ? " " : "";
-            GameEvents.InvokeExpressionUpdated(currentText + prefix + "¡î");
-            // GameEvents.InvokeExpressionUpdated(currentExpression.ToDisplayString() + " (¡î ´ë±â)");
+            Debug.Log($"[PlayerController] ì—°ì‚°ì ì¶”ê°€: {operatorCard.GetDisplayText()}");
         }
 
         #endregion
 
-        #region ³»ºÎ À¯Æ¿¸®Æ¼
+        #region ë‚´ë¶€ ìœ í‹¸ë¦¬í‹°
 
-        /// <summary>
-        /// ¼ö½Ä°ú °ü·ÃµÈ ¸ğµç »óÅÂ¸¦ ÃÊ±âÈ­ÇÕ´Ï´Ù.
-        /// (»õ ¶ó¿îµå ½ÃÀÛ ¶Ç´Â ¸®¼Â ½Ã »ç¿ë)
-        /// </summary>
         private void ResetExpressionState()
         {
             currentExpression.Clear();
-            usedNumberCards.Clear();
-            usedSqrtCount = 0;
-            usedMultiplyCount = 0;
-            nextNumberHasSqrt = false;
+            usedCards.Clear();
 
-            // ¼ÕÆĞ¿¡ ÀÖ´Â ¸ğµç ¼ıÀÚ Ä«µå¸¦ "»ç¿ë ¾È ÇÔ"À¸·Î ÃÊ±âÈ­
+            // ì†íŒ¨ì˜ ëª¨ë“  ì¹´ë“œë¥¼ "ì‚¬ìš© ì•ˆ í•¨"ìœ¼ë¡œ ì´ˆê¸°í™”
             if (currentHand != null)
             {
+                // ìˆ«ì ì¹´ë“œ
                 foreach (var card in currentHand.NumberCards)
                 {
-                    usedNumberCards[card] = false;
+                    usedCards[card] = false;
                 }
+
+                // ì—°ì‚°ì ì¹´ë“œë„ ì¶”ê°€ (Hand.csì— OperatorCards ë¦¬ìŠ¤íŠ¸ í•„ìš”)
+                // í˜„ì¬ëŠ” ê¸°ë³¸ ì—°ì‚°ìë§Œ ìˆìœ¼ë¯€ë¡œ ìƒëµ
             }
         }
 

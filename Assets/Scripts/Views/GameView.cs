@@ -1,4 +1,4 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
@@ -8,74 +8,83 @@ using MathHighLow.Services;
 namespace MathHighLow.Views
 {
     /// <summary>
-    /// [ÇĞ½À Æ÷ÀÎÆ®] ¸ŞÀÎ View
+    /// âœ… ìˆ˜ì •: ì—°ì‚°ì ë²„íŠ¼ ì™„ì „ ì œê±°
     /// 
-    /// Canvas¿¡ ºÎÂøµÇ¾î ¸ğµç UI ¿ä¼Ò¸¦ °ü¸®ÇÏ°í ÀÌº¥Æ®¸¦ ±¸µ¶/¹ßÇàÇÕ´Ï´Ù.
-    /// ÀÌ ½ºÅ©¸³Æ®´Â ·ÎÁ÷(Controller)À» ÀüÇô ¸ğ¸£¸ç, ¿ÀÁ÷ GameEvents¿Í Åë½ÅÇÕ´Ï´Ù.
+    /// Canvasì— ë¶€ì°©ë˜ì–´ ëª¨ë“  UI ìš”ì†Œë¥¼ ê´€ë¦¬í•˜ê³  ì´ë²¤íŠ¸ë¥¼ êµ¬ë…/ë°œí–‰í•©ë‹ˆë‹¤.
+    /// ì´ì œ ì—°ì‚°ìëŠ” ì¹´ë“œë¡œë§Œ ì²˜ë¦¬í•©ë‹ˆë‹¤!
     /// </summary>
     public class GameView : MonoBehaviour
     {
-        [Header("ÇÁ¸®ÆÕ")]
+        [Header("í”„ë¦¬íŒ¹")]
         [SerializeField] private CardView cardPrefab;
 
-        [Header("UI ÄÁÅ×ÀÌ³Ê (¼ÕÆĞ)")]
+        [Header("UI ì»¨í…Œì´ë„ˆ (ì†íŒ¨)")]
         [SerializeField] private Transform playerHandContainer;
         [SerializeField] private Transform aiHandContainer;
 
-        [Header("»óÅÂ ÅØ½ºÆ®")]
+        [Header("ìƒíƒœ í…ìŠ¤íŠ¸")]
         [SerializeField] private TextMeshProUGUI playerScoreText;
         [SerializeField] private TextMeshProUGUI aiScoreText;
         [SerializeField] private TextMeshProUGUI playerExpressionText;
         [SerializeField] private TextMeshProUGUI timerText;
-        [SerializeField] private TextMeshProUGUI statusText; // (¿¹: "Ä«µå¸¦ ºĞ¹èÇÕ´Ï´Ù...")
+        [SerializeField] private TextMeshProUGUI statusText;
 
-        [Header("º£ÆÃ UI")]
+        [Header("ë² íŒ… UI")]
         [SerializeField] private TextMeshProUGUI betText;
         [SerializeField] private Button betIncreaseButton;
         [SerializeField] private Button betDecreaseButton;
-        private int currentBetDisplay; // UI°¡ ÇöÀç Ç¥½Ã ÁßÀÎ º£ÆÃ °ª
+        private int currentBetDisplay;
 
-        [Header("¸ñÇ¥°ª ¹öÆ°")]
-        [SerializeField] private List<Button> targetButtons; // ÀÎ½ºÆåÅÍ¿¡¼­ Å¸°Ù ¹öÆ°µé ¿¬°á
+        [Header("ëª©í‘œê°’ ë²„íŠ¼")]
+        [SerializeField] private List<Button> targetButtons;
+        [SerializeField] private Color normalColor = Color.white;
+        [SerializeField] private Color selectedColor = Color.blue;
+        private int currentSelectedTarget = -1;
 
-        [Header("±âº» ¹öÆ°")]
+        [Header("ê¸°ë³¸ ë²„íŠ¼")]
         [SerializeField] private Button submitButton;
         [SerializeField] private Button resetButton;
 
-        [Header("¿¬»êÀÚ ¹öÆ°")]
-        [SerializeField] private Button addButton;
-        [SerializeField] private Button subtractButton;
-        [SerializeField] private Button divideButton;
-        [SerializeField] private Button multiplyButton;
-        [SerializeField] private Button sqrtButton;
+        // âŒ ì œê±°: ì—°ì‚°ì ë²„íŠ¼ë“¤ (ë” ì´ìƒ ì‚¬ìš© ì•ˆ í•¨)
+        // [SerializeField] private Button addButton;
+        // [SerializeField] private Button subtractButton;
+        // [SerializeField] private Button divideButton;
+        // [SerializeField] private Button multiplyButton;
+        // [SerializeField] private Button sqrtButton;
 
-        [Header("°á°ú ÆĞ³Î")]
+        [Header("ê²°ê³¼ íŒ¨ë„")]
         [SerializeField] private GameObject resultPanel;
         [SerializeField] private TextMeshProUGUI resultSummaryText;
         [SerializeField] private TextMeshProUGUI resultDetailText;
 
-        // »ı¼ºµÈ Ä«µå ºä ¿ÀºêÁ§Æ®µéÀ» °ü¸® (¶ó¿îµå ¸®¼Â ½Ã ÆÄ±«ÇÏ±â À§ÇÔ)
+        // ìƒì„±ëœ ì¹´ë“œ ë·° ì˜¤ë¸Œì íŠ¸ë“¤ì„ ê´€ë¦¬
         private List<GameObject> spawnedCards = new List<GameObject>();
 
-        #region ÀÌº¥Æ® ±¸µ¶ (OnEnable / OnDisable)
+        #region ì´ë²¤íŠ¸ êµ¬ë… (OnEnable / OnDisable)
 
         void OnEnable()
         {
-            // Á¡¼ö
+            // ì ìˆ˜
             GameEvents.OnScoreChanged += UpdateScoreText;
 
-            // ¶ó¿îµå ÁøÇà
+            // ë¼ìš´ë“œ ì§„í–‰
             GameEvents.OnRoundStarted += HandleRoundStarted;
             GameEvents.OnCardAdded += HandleCardAdded;
-            GameEvents.OnOperatorDisabled += HandleOperatorDisabled;
             GameEvents.OnRoundEnded += HandleRoundEnded;
 
-            // ÇÃ·¹ÀÌ¾î ÀÔ·Â
+            // í”Œë ˆì´ì–´ ì…ë ¥
             GameEvents.OnExpressionUpdated += UpdateExpressionText;
             GameEvents.OnTargetSelected += HandleTargetSelected;
             GameEvents.OnBetChanged += UpdateBetText;
+            GameEvents.OnTimerUpdated += UpdateTimerText;
 
-            // °ÔÀÓ Á¾·á
+            // ì œì¶œ ê°€ëŠ¥ ì—¬ë¶€
+            GameEvents.OnSubmitAvailabilityChanged += UpdateSubmitAvailability;
+
+            // âœ… ì¶”ê°€: ìƒíƒœ í…ìŠ¤íŠ¸
+            GameEvents.OnStatusTextUpdated += UpdateStatusText;
+
+            // ê²Œì„ ì¢…ë£Œ
             GameEvents.OnGameOver += HandleGameOver;
         }
 
@@ -84,73 +93,100 @@ namespace MathHighLow.Views
             GameEvents.OnScoreChanged -= UpdateScoreText;
             GameEvents.OnRoundStarted -= HandleRoundStarted;
             GameEvents.OnCardAdded -= HandleCardAdded;
-            GameEvents.OnOperatorDisabled -= HandleOperatorDisabled;
             GameEvents.OnRoundEnded -= HandleRoundEnded;
             GameEvents.OnExpressionUpdated -= UpdateExpressionText;
             GameEvents.OnTargetSelected -= HandleTargetSelected;
             GameEvents.OnBetChanged -= UpdateBetText;
+            GameEvents.OnTimerUpdated -= UpdateTimerText;
+            GameEvents.OnSubmitAvailabilityChanged -= UpdateSubmitAvailability;
+            GameEvents.OnStatusTextUpdated -= UpdateStatusText; // âœ… ì¶”ê°€
             GameEvents.OnGameOver -= HandleGameOver;
         }
 
         #endregion
 
-        #region ¹öÆ° ¸®½º³Ê (Start)
+        #region ë²„íŠ¼ ë¦¬ìŠ¤ë„ˆ (Start)
 
         void Start()
         {
-            // [ÇĞ½À Æ÷ÀÎÆ®] View°¡ ÀÔ·ÂÀ» ¹ßÇàÇÏ´Â ¹æ¹ı
-
-            // ±âº» ¹öÆ°
+            // ê¸°ë³¸ ë²„íŠ¼
             submitButton.onClick.AddListener(() => GameEvents.InvokeSubmit());
             resetButton.onClick.AddListener(() => GameEvents.InvokeReset());
 
-            // ¿¬»êÀÚ ¹öÆ°
-            addButton.onClick.AddListener(() => GameEvents.InvokeOperatorSelected(OperatorCard.OperatorType.Add));
-            subtractButton.onClick.AddListener(() => GameEvents.InvokeOperatorSelected(OperatorCard.OperatorType.Subtract));
-            divideButton.onClick.AddListener(() => GameEvents.InvokeOperatorSelected(OperatorCard.OperatorType.Divide));
-            multiplyButton.onClick.AddListener(() => GameEvents.InvokeOperatorSelected(OperatorCard.OperatorType.Multiply));
-            sqrtButton.onClick.AddListener(() => GameEvents.InvokeSquareRootClicked());
+            // âŒ ì œê±°: ì—°ì‚°ì ë²„íŠ¼ ë¦¬ìŠ¤ë„ˆ
+            // addButton.onClick.AddListener(() => GameEvents.InvokeOperatorSelected(OperatorCard.OperatorType.Add));
+            // subtractButton.onClick.AddListener(() => GameEvents.InvokeOperatorSelected(OperatorCard.OperatorType.Subtract));
+            // divideButton.onClick.AddListener(() => GameEvents.InvokeOperatorSelected(OperatorCard.OperatorType.Divide));
+            // multiplyButton.onClick.AddListener(() => GameEvents.InvokeOperatorSelected(OperatorCard.OperatorType.Multiply));
+            // sqrtButton.onClick.AddListener(() => GameEvents.InvokeSquareRootClicked());
 
-            // º£ÆÃ ¹öÆ°
+            // ë² íŒ… ë²„íŠ¼
             betIncreaseButton.onClick.AddListener(HandleBetIncrease);
             betDecreaseButton.onClick.AddListener(HandleBetDecrease);
 
-            // ¸ñÇ¥°ª ¹öÆ° (ÀÎ½ºÆåÅÍ¿¡¼­ ¼³Á¤ÇÑ °ª »ç¿ë)
-            // ¿¹½Ã: ¹öÆ°ÀÌ 2°³ÀÌ°í Å¸°ÙÀÌ 1, 20 ÀÌ¶ó°í °¡Á¤
+            // ëª©í‘œê°’ ë²„íŠ¼
             if (targetButtons.Count > 0 && targetButtons[0] != null)
-                targetButtons[0].onClick.AddListener(() => GameEvents.InvokeTargetSelected(1)); // (GameConfig¿Í ¸ÂÃç¾ß ÇÔ)
+                targetButtons[0].onClick.AddListener(() => SelectTarget(0, 1));
             if (targetButtons.Count > 1 && targetButtons[1] != null)
-                targetButtons[1].onClick.AddListener(() => GameEvents.InvokeTargetSelected(20)); // (GameConfig¿Í ¸ÂÃç¾ß ÇÔ)
+                targetButtons[1].onClick.AddListener(() => SelectTarget(1, 20));
 
-            // ÃÊ±âÈ­
+            // ì´ˆê¸°í™”
             resultPanel.SetActive(false);
-            UpdateScoreText(0, 0); // (GameController°¡ ½ÃÀÛ ½Ã µ¤¾î¾µ °ÍÀÓ)
+            UpdateScoreText(0, 0);
             UpdateExpressionText("");
+            UpdateTimerText(0, 180);
         }
 
         #endregion
 
-        #region ÀÔ·Â ÇÚµé·¯ (UI -> Event)
+        #region ì…ë ¥ í•¸ë“¤ëŸ¬ (UI -> Event)
 
         private void HandleBetIncrease()
         {
-            // (Âü°í: Min/MaxBet´Â GameConfig¿¡ ÀÖÁö¸¸ View´Â Config¸¦ ¸ğ¸§)
-            // ÀÏ´Ü °ªÀ» ¿Ã¸®°í ÀÌº¥Æ® ¹ßÇà -> ·ÎÁ÷(RoundController)ÀÌ ¹Ş¾Æ¼­ °ËÁõ ÈÄ
-            // ´Ù½Ã OnBetChanged ÀÌº¥Æ®¸¦ ¹ßÇàÇÏ¸é UI°¡ °Å±â¿¡ ¸ÂÃçÁü.
             currentBetDisplay++;
+
+            // âœ… ì¶”ê°€: ìµœëŒ€ 5ì› ì œí•œ
+            if (currentBetDisplay > 5)
+            {
+                currentBetDisplay = 5;
+            }
+
             GameEvents.InvokeBetChanged(currentBetDisplay);
         }
 
         private void HandleBetDecrease()
         {
             currentBetDisplay--;
-            if (currentBetDisplay < 1) currentBetDisplay = 1; // ÃÖ¼Ò 1
+            if (currentBetDisplay < 1) currentBetDisplay = 1;
             GameEvents.InvokeBetChanged(currentBetDisplay);
+        }
+
+        private void SelectTarget(int buttonIndex, int targetValue)
+        {
+            // âœ… ìˆ˜ì •: ë°”ë¡œ ìƒ‰ìƒ ë³€ê²½
+            currentSelectedTarget = targetValue;
+
+            // ì¦‰ì‹œ ë²„íŠ¼ ìƒ‰ìƒ ì—…ë°ì´íŠ¸
+            for (int i = 0; i < targetButtons.Count; i++)
+            {
+                if (targetButtons[i] == null) continue;
+
+                // ë²„íŠ¼ì— ì—°ê²°ëœ ëª©í‘œê°’ í™•ì¸ (0ë²ˆ=1, 1ë²ˆ=20)
+                int buttonTargetValue = (i == 0) ? 1 : 20;
+
+                // ì„ íƒëœ ë²„íŠ¼ì€ íŒŒë€ìƒ‰, ë‚˜ë¨¸ì§€ëŠ” í°ìƒ‰
+                ColorBlock colors = targetButtons[i].colors;
+                colors.normalColor = (buttonTargetValue == targetValue) ? selectedColor : normalColor;
+                targetButtons[i].colors = colors;
+            }
+
+            // ì´ë²¤íŠ¸ ë°œí–‰ (ë‹¤ë¥¸ ì‹œìŠ¤í…œì— ì•Œë¦¼)
+            GameEvents.InvokeTargetSelected(targetValue);
         }
 
         #endregion
 
-        #region ·ÎÁ÷ ÇÚµé·¯ (Event -> UI)
+        #region ë¡œì§ í•¸ë“¤ëŸ¬ (Event -> UI)
 
         private void UpdateScoreText(int playerScore, int aiScore)
         {
@@ -160,40 +196,43 @@ namespace MathHighLow.Views
 
         private void HandleRoundStarted()
         {
-            // ±âÁ¸ Ä«µå ¿ÀºêÁ§Æ® ¸ğµÎ ÆÄ±«
+            // ê¸°ì¡´ ì¹´ë“œ ì˜¤ë¸Œì íŠ¸ ëª¨ë‘ íŒŒê´´
             foreach (var card in spawnedCards)
             {
                 Destroy(card);
             }
             spawnedCards.Clear();
 
-            // ÆĞ³Î/ÅØ½ºÆ® ÃÊ±âÈ­
+            // íŒ¨ë„ ì´ˆê¸°í™”
             resultPanel.SetActive(false);
             UpdateExpressionText("");
-            statusText.text = "Ä«µå¸¦ ºĞ¹èÇÕ´Ï´Ù...";
 
-            // ¿¬»êÀÚ ¹öÆ° È°¼ºÈ­
-            addButton.interactable = true;
-            subtractButton.interactable = true;
-            divideButton.interactable = true;
+            // âœ… ìˆ˜ì •: ì´ˆê¸° ìƒíƒœëŠ” RoundControllerì—ì„œ ì„¤ì •
+            // statusTextëŠ” OnStatusTextUpdated ì´ë²¤íŠ¸ë¡œ ì—…ë°ì´íŠ¸ë¨
+
+            // âœ… ì¶”ê°€: ì œì¶œ ë²„íŠ¼ ì´ˆê¸° ë¹„í™œì„±í™”
+            submitButton.interactable = false;
+
+            UpdateTimerText(0, 180);
         }
 
         private void HandleCardAdded(Card card, bool isPlayer)
         {
-            // 1. ÇÁ¸®ÆÕ »ı¼º
+            // 1. í”„ë¦¬íŒ¹ ìƒì„±
             Transform parent = isPlayer ? playerHandContainer : aiHandContainer;
             CardView newCardView = Instantiate(cardPrefab, parent);
 
-            // 2. ÇÁ¸®ÆÕ ÃÊ±âÈ­ (µ¥ÀÌÅÍ ÁÖÀÔ)
+            // 2. í”„ë¦¬íŒ¹ ì´ˆê¸°í™” (ë°ì´í„° ì£¼ì…)
             newCardView.Initialize(card, isPlayer);
 
-            // 3. ¸®½ºÆ®¿¡ Ãß°¡ÇÏ¿© °ü¸®
+            // 3. ë¦¬ìŠ¤íŠ¸ì— ì¶”ê°€í•˜ì—¬ ê´€ë¦¬
             spawnedCards.Add(newCardView.gameObject);
         }
 
+        // âŒ ì œê±°: HandleOperatorDisabled (ë²„íŠ¼ì´ ì—†ìœ¼ë¯€ë¡œ ë¶ˆí•„ìš”)
+        /*
         private void HandleOperatorDisabled(OperatorCard.OperatorType op)
         {
-            // ¡¿ Ä«µå·Î ºñÈ°¼ºÈ­µÈ ¿¬»êÀÚ ¹öÆ°À» È¸»ö Ã³¸®
             switch (op)
             {
                 case OperatorCard.OperatorType.Add:
@@ -207,10 +246,11 @@ namespace MathHighLow.Views
                     break;
             }
         }
+        */
 
         private void HandleRoundEnded(RoundResult result)
         {
-            // °á°ú ÆĞ³Î Ç¥½Ã
+            // ê²°ê³¼ íŒ¨ë„ í‘œì‹œ
             resultSummaryText.text = result.GetSummary();
             resultDetailText.text = result.GetDetail();
             resultPanel.SetActive(true);
@@ -221,21 +261,117 @@ namespace MathHighLow.Views
             playerExpressionText.text = string.IsNullOrEmpty(expressionText) ? "..." : expressionText;
         }
 
+        /// <summary>
+        /// âŒ ë” ì´ìƒ ì‚¬ìš© ì•ˆ í•¨: ìƒ‰ìƒ ë³€ê²½ì€ SelectTargetì—ì„œ ë°”ë¡œ ì²˜ë¦¬
+        /// ì´ë²¤íŠ¸ëŠ” ë‹¤ë¥¸ ì‹œìŠ¤í…œ(RoundController ë“±)ì— ì•Œë¦¬ëŠ” ìš©ë„ë¡œë§Œ ì‚¬ìš©
+        /// </summary>
         private void HandleTargetSelected(int target)
         {
-            // (±¸Çö) ¼±ÅÃµÈ Å¸°Ù ¹öÆ°À» ÇÏÀÌ¶óÀÌÆ®
+            // ìƒ‰ìƒ ë³€ê²½ì€ SelectTargetì—ì„œ ì´ë¯¸ ì²˜ë¦¬ë¨
+            // ì—¬ê¸°ì„œëŠ” ì•„ë¬´ê²ƒë„ í•˜ì§€ ì•ŠìŒ
         }
 
         private void UpdateBetText(int newBet)
         {
             currentBetDisplay = newBet;
             betText.text = $"${currentBetDisplay}";
+
+            // âœ… ì¶”ê°€: ìµœëŒ€ê°’ì— ë„ë‹¬í•˜ë©´ ë²„íŠ¼ ë¹„í™œì„±í™”
+            if (currentBetDisplay >= 5)
+            {
+                betIncreaseButton.interactable = false;
+            }
+            else
+            {
+                betIncreaseButton.interactable = true;
+            }
+
+            // ìµœì†Œê°’ì— ë„ë‹¬í•˜ë©´ ê°ì†Œ ë²„íŠ¼ ë¹„í™œì„±í™”
+            if (currentBetDisplay <= 1)
+            {
+                betDecreaseButton.interactable = false;
+            }
+            else
+            {
+                betDecreaseButton.interactable = true;
+            }
+        }
+
+        private void UpdateTimerText(float currentTime, float maxTime)
+        {
+            float remainingTime = maxTime - currentTime;
+
+            if (remainingTime < 0)
+            {
+                timerText.text = "00:00";
+                timerText.color = Color.red;
+            }
+            else
+            {
+                int minutes = Mathf.FloorToInt(remainingTime / 60f);
+                int seconds = Mathf.FloorToInt(remainingTime % 60f);
+                timerText.text = $"{minutes:00}:{seconds:00}";
+
+                // 30ì´ˆ ì´í•˜ë©´ ë¹¨ê°„ìƒ‰ìœ¼ë¡œ ê²½ê³ 
+                if (remainingTime <= 30)
+                {
+                    timerText.color = Color.red;
+                }
+                else
+                {
+                    timerText.color = Color.white;
+                }
+            }
         }
 
         private void HandleGameOver(string winner)
         {
-            statusText.text = $"°ÔÀÓ Á¾·á! ÃÖÁ¾ ½ÂÀÚ: {winner}";
-            // (±¸Çö) ¸ğµç ¹öÆ° ºñÈ°¼ºÈ­
+            statusText.text = $"ê²Œì„ ì¢…ë£Œ! ìµœì¢… ìŠ¹ì: {winner}";
+            // (êµ¬í˜„) ëª¨ë“  ë²„íŠ¼ ë¹„í™œì„±í™”
+        }
+
+        /// <summary>
+        /// âœ… ìˆ˜ì •: ì œì¶œ ê°€ëŠ¥ ì—¬ë¶€ ì—…ë°ì´íŠ¸ (ë²„íŠ¼ë§Œ ì œì–´)
+        /// </summary>
+        private void UpdateSubmitAvailability(bool canSubmit)
+        {
+            // ì œì¶œ ë²„íŠ¼ë§Œ í™œì„±í™”/ë¹„í™œì„±í™”
+            submitButton.interactable = canSubmit;
+
+            // ìƒ‰ìƒ ë³€ê²½ (ì„ íƒ)
+            var colors = submitButton.colors;
+            colors.normalColor = canSubmit ? Color.white : Color.gray;
+            submitButton.colors = colors;
+        }
+
+        /// <summary>
+        /// âœ… ì¶”ê°€: ìƒíƒœ í…ìŠ¤íŠ¸ ì—…ë°ì´íŠ¸
+        /// </summary>
+        private void UpdateStatusText(string message)
+        {
+            statusText.text = message;
+
+            // ë©”ì‹œì§€ë³„ ìƒ‰ìƒ ì„¤ì •
+            if (message.Contains("ë¶„ë°°"))
+            {
+                statusText.color = Color.white;
+            }
+            else if (message.Contains("ì™„ì„±í•˜ì„¸ìš”"))
+            {
+                statusText.color = Color.cyan;
+            }
+            else if (message.Contains("ì œì¶œ"))
+            {
+                statusText.color = Color.green;
+            }
+            else if (message.Contains("ê²°ê³¼"))
+            {
+                statusText.color = Color.yellow;
+            }
+            else
+            {
+                statusText.color = Color.white;
+            }
         }
 
         #endregion

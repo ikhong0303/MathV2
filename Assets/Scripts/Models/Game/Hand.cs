@@ -4,14 +4,10 @@ using System.Linq;
 namespace MathHighLow.Models
 {
     /// <summary>
-    /// [학습 포인트] 컬렉션 관리와 LINQ
+    /// ✅ 수정: OperatorCard 리스트 추가
     /// 
-    /// 한 플레이어(또는 AI)의 손패를 관리합니다.
-    /// 숫자 카드와 특수 카드를 따로 관리합니다.
-    /// 
-    /// 실습 과제:
-    /// 1. 손패의 총 가치를 계산하는 GetTotalValue() 메서드 추가
-    /// 2. 특정 숫자 카드를 찾는 FindNumberCard(int value) 메서드 추가
+    /// 새로운 구조에서는 연산자도 카드로 받으므로
+    /// 손패에 OperatorCard 리스트가 필요합니다.
     /// </summary>
     [System.Serializable]
     public class Hand
@@ -20,6 +16,11 @@ namespace MathHighLow.Models
         /// 보유한 숫자 카드 목록
         /// </summary>
         public List<NumberCard> NumberCards { get; private set; }
+
+        /// <summary>
+        /// ✅ 추가: 보유한 연산자 카드 목록
+        /// </summary>
+        public List<OperatorCard> OperatorCards { get; private set; }
 
         /// <summary>
         /// 보유한 특수 카드 목록
@@ -38,6 +39,7 @@ namespace MathHighLow.Models
         public Hand()
         {
             NumberCards = new List<NumberCard>();
+            OperatorCards = new List<OperatorCard>();  // ✅ 추가
             SpecialCards = new List<SpecialCard>();
             DisabledOperators = new List<OperatorCard.OperatorType>();
         }
@@ -48,21 +50,23 @@ namespace MathHighLow.Models
         public void Clear()
         {
             NumberCards.Clear();
+            OperatorCards.Clear();  // ✅ 추가
             SpecialCards.Clear();
             DisabledOperators.Clear();
         }
 
         /// <summary>
-        /// 카드를 추가합니다.
-        /// 
-        /// [학습 포인트] 다형성 활용
-        /// Card 타입을 받아서 실제 타입에 따라 다르게 처리합니다.
+        /// ✅ 수정: OperatorCard도 처리하도록 확장
         /// </summary>
         public void AddCard(Card card)
         {
             if (card is NumberCard number)
             {
                 NumberCards.Add(number);
+            }
+            else if (card is OperatorCard operatorCard)  // ✅ 추가
+            {
+                OperatorCards.Add(operatorCard);
             }
             else if (card is SpecialCard special)
             {
@@ -71,13 +75,17 @@ namespace MathHighLow.Models
         }
 
         /// <summary>
-        /// 특정 카드를 제거합니다.
+        /// ✅ 수정: OperatorCard도 제거 가능
         /// </summary>
         public bool RemoveCard(Card card)
         {
             if (card is NumberCard number)
             {
                 return NumberCards.Remove(number);
+            }
+            else if (card is OperatorCard operatorCard)  // ✅ 추가
+            {
+                return OperatorCards.Remove(operatorCard);
             }
             else if (card is SpecialCard special)
             {
@@ -122,27 +130,24 @@ namespace MathHighLow.Models
         }
 
         /// <summary>
-        /// 사용 가능한 기본 연산자 목록을 반환합니다.
-        /// (Multiply는 특수 카드로만 사용 가능하므로 제외)
+        /// ✅ 수정: 연산자 카드도 포함
         /// </summary>
         public List<OperatorCard.OperatorType> GetAvailableOperators()
         {
-            var baseOperators = new List<OperatorCard.OperatorType>
-            {
-                OperatorCard.OperatorType.Add,
-                OperatorCard.OperatorType.Subtract,
-                OperatorCard.OperatorType.Divide
-            };
-
-            return baseOperators.Where(op => IsOperatorEnabled(op)).ToList();
+            // 손패에 있는 연산자 카드의 타입 반환
+            return OperatorCards
+                .Where(op => IsOperatorEnabled(op.Operator))
+                .Select(op => op.Operator)
+                .Distinct()
+                .ToList();
         }
 
         /// <summary>
-        /// 손패의 총 카드 수를 반환합니다.
+        /// ✅ 수정: 연산자 카드도 포함하여 총 카드 수 계산
         /// </summary>
         public int GetTotalCardCount()
         {
-            return NumberCards.Count + SpecialCards.Count;
+            return NumberCards.Count + OperatorCards.Count + SpecialCards.Count;
         }
 
         /// <summary>
@@ -150,15 +155,15 @@ namespace MathHighLow.Models
         /// </summary>
         public bool IsEmpty()
         {
-            return NumberCards.Count == 0 && SpecialCards.Count == 0;
+            return NumberCards.Count == 0 && OperatorCards.Count == 0 && SpecialCards.Count == 0;
         }
 
         /// <summary>
-        /// 디버깅용 문자열
+        /// ✅ 수정: 연산자 카드 정보도 포함
         /// </summary>
         public override string ToString()
         {
-            return $"Hand: {NumberCards.Count} numbers, {SpecialCards.Count} specials";
+            return $"Hand: {NumberCards.Count} numbers, {OperatorCards.Count} operators, {SpecialCards.Count} specials";
         }
     }
 }

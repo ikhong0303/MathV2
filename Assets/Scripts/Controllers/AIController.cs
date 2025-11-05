@@ -6,16 +6,11 @@ using System.Linq;
 namespace MathHighLow.Controllers
 {
     /// <summary>
-    /// [학습 포인트] AI 완전 탐색 알고리즘
+    /// ✅ 수정: 연산자 카드를 한 번씩만 사용하도록 개선
     /// 
-    /// 모든 가능한 수식 조합을 시도하여 최적해를 찾습니다.
-    /// 원본 AiSolver.cs를 리팩토링 버전에 맞게 통합했습니다.
-    /// 
-    /// 알고리즘:
-    /// 1. 숫자 순열 생성 (Backtracking)
-    /// 2. 제곱근 분배 (Recursion)
-    /// 3. 연산자 배치 (Constraint Satisfaction)
-    /// 4. 전체 평가 및 최적해 선택
+    /// 이제 연산자도 카드로 받기 때문에:
+    /// - +, -, ÷ 각각 1장씩만 사용 가능
+    /// - × 카드는 여러 장 가능 (특수 카드)
     /// </summary>
     public class AIController : MonoBehaviour
     {
@@ -33,6 +28,12 @@ namespace MathHighLow.Controllers
         public void PlayTurn(Hand hand, int target)
         {
             bestExpression = FindBestExpression(hand, target);
+
+            // ✅ 디버그: AI가 선택한 수식 출력
+            if (bestExpression != null)
+            {
+                Debug.Log($"[AI] 선택한 수식: {bestExpression.ToDisplayString()}");
+            }
         }
 
         public Expression GetExpression()
@@ -51,6 +52,9 @@ namespace MathHighLow.Controllers
             bestExpression = new Expression();
             bestDistance = float.PositiveInfinity;
             availableOperators = hand.GetAvailableOperators();
+
+            // ✅ 디버그: 사용 가능한 연산자 출력
+            Debug.Log($"[AI] 사용 가능한 연산자: {string.Join(", ", availableOperators)}");
 
             // 카드가 없으면 빈 수식 반환
             if (hand.NumberCards.Count == 0)
@@ -72,9 +76,6 @@ namespace MathHighLow.Controllers
 
         /// <summary>
         /// 1단계: 숫자 순열 생성
-        /// 
-        /// [학습 포인트] 백트래킹 알고리즘
-        /// 가능한 모든 숫자 배치를 시도합니다.
         /// </summary>
         private void PermuteNumbers(List<int> remaining, List<int> current, Dictionary<int, int> used)
         {
@@ -117,9 +118,6 @@ namespace MathHighLow.Controllers
 
         /// <summary>
         /// 2단계: 제곱근 분배
-        /// 
-        /// [학습 포인트] 재귀적 조합 생성
-        /// 각 숫자에 √를 몇 개 적용할지 결정합니다.
         /// </summary>
         private void DistributeSquareRoots(List<int> numbers, int index, List<int> sqrtCounts)
         {
@@ -147,20 +145,21 @@ namespace MathHighLow.Controllers
 
         /// <summary>
         /// 3단계: 연산자 배치
-        /// 
-        /// [학습 포인트] 제약 조건 만족 문제
-        /// × 카드 개수를 맞추면서 연산자를 배치합니다.
         /// </summary>
         private void EnumerateOperators(List<int> numbers, List<int> sqrtCounts)
         {
-            AssignOperators(numbers, sqrtCounts, new List<OperatorCard.OperatorType>(), 0, 0);
+            // ✅ 수정: 사용 가능한 연산자 리스트 전달
+            AssignOperators(numbers, sqrtCounts, new List<OperatorCard.OperatorType>(),
+                           new List<OperatorCard.OperatorType>(availableOperators), 0, 0);
         }
 
         /// <summary>
-        /// 연산자를 재귀적으로 배치합니다.
+        /// ✅ 완전히 수정: 연산자를 한 번씩만 사용하도록 재귀 배치
         /// </summary>
         private void AssignOperators(List<int> numbers, List<int> sqrtCounts,
-            List<OperatorCard.OperatorType> operators, int index, int multiplyUsed)
+            List<OperatorCard.OperatorType> operators,
+            List<OperatorCard.OperatorType> remainingOperators, // ✅ 추가: 남은 연산자 추적
+            int index, int multiplyUsed)
         {
             int totalSlots = numbers.Count - 1;
             int multiplyNeeded = currentHand.GetMultiplyCount();
@@ -185,24 +184,34 @@ namespace MathHighLow.Controllers
             if (multiplyUsed < multiplyNeeded)
             {
                 operators.Add(OperatorCard.OperatorType.Multiply);
-                AssignOperators(numbers, sqrtCounts, operators, index + 1, multiplyUsed + 1);
+                AssignOperators(numbers, sqrtCounts, operators, remainingOperators,
+                               index + 1, multiplyUsed + 1);
                 operators.RemoveAt(operators.Count - 1);
             }
 
-            // 기본 연산자 배치 시도
-            foreach (var op in availableOperators)
+            // ✅ 수정: 기본 연산자 배치 (한 번씩만 사용)
+            for (int i = 0; i < remainingOperators.Count; i++)
             {
+                var op = remainingOperators[i];
+
+                // 이 연산자를 사용
                 operators.Add(op);
-                AssignOperators(numbers, sqrtCounts, operators, index + 1, multiplyUsed);
+
+                // ✅ 핵심: 이 연산자를 제거한 새 리스트 생성
+                var newRemaining = new List<OperatorCard.OperatorType>(remainingOperators);
+                newRemaining.RemoveAt(i);
+
+                // 재귀 호출
+                AssignOperators(numbers, sqrtCounts, operators, newRemaining,
+                               index + 1, multiplyUsed);
+
+                // 백트래킹
                 operators.RemoveAt(operators.Count - 1);
             }
         }
 
         /// <summary>
         /// 4단계: 수식 구성 및 평가
-        /// 
-        /// [학습 포인트] 최적화 탐색
-        /// 각 조합을 평가하여 목표값에 가장 가까운 것을 저장합니다.
         /// </summary>
         private void BuildAndEvaluate(List<int> numbers, List<int> sqrtCounts,
             List<OperatorCard.OperatorType> operators)
@@ -233,7 +242,7 @@ namespace MathHighLow.Controllers
             if (!evaluation.Success)
                 return;
 
-            // 목표값과의 거리 계산 (Unity Mathf 사용)
+            // 목표값과의 거리 계산
             float distance = Mathf.Abs(evaluation.Value - targetNumber);
 
             // 더 좋은 결과면 저장

@@ -4,104 +4,58 @@ using MathHighLow.Models;
 namespace MathHighLow.Services
 {
     /// <summary>
-    /// [학습 포인트] 이벤트 기반 아키텍처
-    /// 
-    /// 게임 전체에서 사용하는 이벤트를 정의합니다.
-    /// 이벤트를 사용하면 클래스 간의 의존성을 낮출 수 있습니다.
-    /// 
-    /// 사용 예시:
-    /// - 발행: GameEvents.OnCardClicked?.Invoke(card);
-    /// - 구독: GameEvents.OnCardClicked += HandleCardClick;
-    /// 
-    /// 실습 과제:
-    /// 1. 새로운 이벤트 추가해보기
-    /// 2. 이벤트 로깅 시스템 만들기
+    /// ✅ 수정: 타이머 및 제출 가능 여부 이벤트 추가
     /// </summary>
     public static class GameEvents
     {
         // ===== 카드 관련 이벤트 =====
-        
-        /// <summary>
-        /// 카드가 클릭되었을 때
-        /// </summary>
-        public static event Action<Card> OnCardClicked;
 
-        /// <summary>
-        /// 카드가 손패에 추가되었을 때
-        /// </summary>
+        public static event Action<Card> OnCardClicked;
         public static event Action<Card, bool> OnCardAdded; // Card, isPlayer
 
         // ===== 연산자 관련 이벤트 =====
-        
-        /// <summary>
-        /// 연산자가 선택되었을 때
-        /// </summary>
+
         public static event Action<OperatorCard.OperatorType> OnOperatorSelected;
-
-        /// <summary>
-        /// 제곱근 버튼이 클릭되었을 때
-        /// </summary>
         public static event Action OnSquareRootClicked;
-
-        /// <summary>
-        /// 연산자가 비활성화되었을 때
-        /// </summary>
         public static event Action<OperatorCard.OperatorType> OnOperatorDisabled;
 
         // ===== 게임 진행 이벤트 =====
-        
-        /// <summary>
-        /// 라운드가 시작되었을 때
-        /// </summary>
+
         public static event Action OnRoundStarted;
-
-        /// <summary>
-        /// 라운드가 종료되었을 때
-        /// </summary>
         public static event Action<RoundResult> OnRoundEnded;
-
-        /// <summary>
-        /// 제출 버튼이 클릭되었을 때
-        /// </summary>
         public static event Action OnSubmitClicked;
-
-        /// <summary>
-        /// 리셋 버튼이 클릭되었을 때
-        /// </summary>
         public static event Action OnResetClicked;
 
         // ===== 설정 관련 이벤트 =====
-        
-        /// <summary>
-        /// 목표값이 선택되었을 때
-        /// </summary>
-        public static event Action<int> OnTargetSelected;
 
-        /// <summary>
-        /// 베팅 금액이 변경되었을 때
-        /// </summary>
+        public static event Action<int> OnTargetSelected;
         public static event Action<int> OnBetChanged;
 
         // ===== 점수 관련 이벤트 =====
-        
-        /// <summary>
-        /// 점수가 변경되었을 때
-        /// </summary>
-        public static event Action<int, int> OnScoreChanged; // playerScore, aiScore
 
-        /// <summary>
-        /// 게임이 종료되었을 때 (누군가 돈이 떨어짐)
-        /// </summary>
+        public static event Action<int, int> OnScoreChanged; // playerScore, aiScore
         public static event Action<string> OnGameOver; // winner
         public static event Action<string> OnExpressionUpdated; // 수식 텍스트가 변경됨
 
+        // ===== ✅ 추가: 타이머 및 제출 가능 여부 =====
+
+        /// <summary>
+        /// 타이머가 업데이트되었을 때
+        /// </summary>
+        public static event Action<float, float> OnTimerUpdated; // currentTime, maxTime
+
+        /// <summary>
+        /// 제출 가능 여부가 변경되었을 때
+        /// </summary>
+        public static event Action<bool> OnSubmitAvailabilityChanged; // canSubmit
+
+        /// <summary>
+        /// ✅ 추가: 상태 텍스트 업데이트
+        /// </summary>
+        public static event Action<string> OnStatusTextUpdated; // statusMessage
 
         // ===== 유틸리티 메서드 =====
 
-        /// <summary>
-        /// 모든 이벤트를 초기화합니다.
-        /// 씬 전환 시 호출하여 메모리 누수를 방지합니다.
-        /// </summary>
         public static void ClearAllEvents()
         {
             OnCardClicked = null;
@@ -117,13 +71,13 @@ namespace MathHighLow.Services
             OnBetChanged = null;
             OnScoreChanged = null;
             OnGameOver = null;
+            OnExpressionUpdated = null;
+            OnTimerUpdated = null; // ✅ 추가
+            OnSubmitAvailabilityChanged = null; // ✅ 추가
+            OnStatusTextUpdated = null; // ✅ 추가
         }
 
-        /// <summary>
-        /// 이벤트를 안전하게 발행합니다.
-        /// null 체크를 자동으로 수행합니다.
-        /// </summary>
-        /// 
+        // ===== 이벤트 발행 메서드 =====
 
         public static void InvokeExpressionUpdated(string expressionText)
         {
@@ -193,6 +147,32 @@ namespace MathHighLow.Services
         public static void InvokeOperatorDisabled(OperatorCard.OperatorType op)
         {
             OnOperatorDisabled?.Invoke(op);
+        }
+
+        // ===== ✅ 추가: 새로운 이벤트 발행 메서드 =====
+
+        /// <summary>
+        /// 타이머 업데이트 이벤트 발행
+        /// </summary>
+        public static void InvokeTimerUpdated(float currentTime, float maxTime)
+        {
+            OnTimerUpdated?.Invoke(currentTime, maxTime);
+        }
+
+        /// <summary>
+        /// 제출 가능 여부 변경 이벤트 발행
+        /// </summary>
+        public static void InvokeSubmitAvailabilityChanged(bool canSubmit)
+        {
+            OnSubmitAvailabilityChanged?.Invoke(canSubmit);
+        }
+
+        /// <summary>
+        /// ✅ 추가: 상태 텍스트 업데이트 이벤트 발행
+        /// </summary>
+        public static void InvokeStatusTextUpdated(string statusMessage)
+        {
+            OnStatusTextUpdated?.Invoke(statusMessage);
         }
     }
 }

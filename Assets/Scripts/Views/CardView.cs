@@ -1,4 +1,4 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using MathHighLow.Models;
@@ -7,33 +7,32 @@ using MathHighLow.Services;
 namespace MathHighLow.Views
 {
     /// <summary>
-    /// [ÇĞ½À Æ÷ÀÎÆ®] ÇÁ¸®ÆÕ ½ºÅ©¸³Æ®
-    /// 
-    /// Ä«µå ÇÁ¸®ÆÕ¿¡ ºÎÂøµÇ¾î °³º° Ä«µåÀÇ UI¸¦ ´ã´çÇÕ´Ï´Ù.
-    /// ÀÚ½ÅÀÇ Card µ¥ÀÌÅÍ¸¦ ¼ÒÀ¯ÇÏ°í, Å¬¸¯ ½Ã GameEvents¸¦ ¹ßÇàÇÕ´Ï´Ù.
+    /// âœ… ìˆ˜ì •: ëª¨ë“  ì¹´ë“œ íƒ€ì… ì²˜ë¦¬
+    /// - ìˆ«ì ì¹´ë“œ: í´ë¦­ ê°€ëŠ¥
+    /// - ì—°ì‚°ì ì¹´ë“œ: í´ë¦­ ê°€ëŠ¥ (ìƒˆë¡œìš´ ê¸°ëŠ¥!)
+    /// - íŠ¹ìˆ˜ ì¹´ë“œ: í´ë¦­ ë¶ˆê°€ (ìë™ ì²˜ë¦¬)
     /// </summary>
     [RequireComponent(typeof(Button))]
     public class CardView : MonoBehaviour
     {
-        [Header("UI ÂüÁ¶")]
+        [Header("UI ì°¸ì¡°")]
         [SerializeField] private TextMeshProUGUI displayText;
         [SerializeField] private Image backgroundImage;
         [SerializeField] private Button button;
 
-        [Header("Ä«µå ¼³Á¤")]
-        [SerializeField] private Color playerCardColor = Color.white;
-        [SerializeField] private Color aiCardColor = new Color(0.9f, 0.9f, 1f);
+        [Header("ì¹´ë“œ ìƒ‰ìƒ")]
+        [SerializeField] private Color playerNumberCardColor = Color.white;
+        [SerializeField] private Color playerOperatorCardColor = new Color(0.8f, 1f, 0.8f); // ì—°ë‘ìƒ‰
+        [SerializeField] private Color specialCardColor = new Color(1f, 0.9f, 0.5f); // ë…¸ë€ìƒ‰
+        [SerializeField] private Color aiCardColor = new Color(0.9f, 0.9f, 1f); // ì—°í•œ íŒŒë€ìƒ‰
 
         private Card card;
         private bool isPlayerCard;
 
         void OnEnable()
         {
-            // ¸®¼Â/¶ó¿îµå ½ÃÀÛ ½Ã ´Ù½Ã È°¼ºÈ­
             GameEvents.OnRoundStarted += ResetCard;
             GameEvents.OnResetClicked += ResetCard;
-
-            // ´Ù¸¥ Ä«µå°¡ Å¬¸¯µÇ¾úÀ» ¶§°¡ ¾Æ´Ñ, "³»°¡" Å¬¸¯µÇ¾úÀ» ¶§ ºñÈ°¼ºÈ­
             GameEvents.OnCardClicked += HandleCardUsed;
         }
 
@@ -45,65 +44,114 @@ namespace MathHighLow.Views
         }
 
         /// <summary>
-        /// HandView(¶Ç´Â GameView)°¡ Ä«µå¸¦ »ı¼ºÇÒ ¶§ È£ÃâÇÕ´Ï´Ù.
+        /// âœ… ìˆ˜ì •: ëª¨ë“  ì¹´ë“œ íƒ€ì… ì´ˆê¸°í™”
         /// </summary>
         public void Initialize(Card cardData, bool isPlayer)
         {
             this.card = cardData;
             this.isPlayerCard = isPlayer;
 
-            // 1. ÅØ½ºÆ® ¼³Á¤
+            // null ì²´í¬
+            if (card == null)
+            {
+                Debug.LogError("[CardView] ì¹´ë“œ ë°ì´í„°ê°€ nullì…ë‹ˆë‹¤!");
+                return;
+            }
+
+            // 1. í…ìŠ¤íŠ¸ ì„¤ì •
             displayText.text = card.GetDisplayText();
 
-            // 2. ¹è°æ»ö ¼³Á¤
-            backgroundImage.color = isPlayer ? playerCardColor : aiCardColor;
-
-            // 3. ¹öÆ° ÀÌº¥Æ® ¼³Á¤
-            button.onClick.RemoveAllListeners();
-            if (isPlayer && card is NumberCard)
+            // 2. ë°°ê²½ìƒ‰ ì„¤ì • (ì¹´ë“œ íƒ€ì…ë³„)
+            if (!isPlayer)
             {
-                // ÇÃ·¹ÀÌ¾îÀÇ ¼ıÀÚ Ä«µå¸¸ Å¬¸¯ °¡´É
+                // AI ì¹´ë“œëŠ” ëª¨ë‘ ê°™ì€ ìƒ‰
+                backgroundImage.color = aiCardColor;
+            }
+            else if (card is NumberCard)
+            {
+                // í”Œë ˆì´ì–´ ìˆ«ì ì¹´ë“œ
+                backgroundImage.color = playerNumberCardColor;
+            }
+            else if (card is OperatorCard)
+            {
+                // âœ… í”Œë ˆì´ì–´ ì—°ì‚°ì ì¹´ë“œ (ìƒˆë¡œìš´ ìƒ‰ìƒ!)
+                backgroundImage.color = playerOperatorCardColor;
+            }
+            else if (card is SpecialCard)
+            {
+                // íŠ¹ìˆ˜ ì¹´ë“œ
+                backgroundImage.color = specialCardColor;
+            }
+
+            // 3. ë²„íŠ¼ ì´ë²¤íŠ¸ ì„¤ì •
+            if (button == null)
+            {
+                button = GetComponent<Button>();
+            }
+
+            button.onClick.RemoveAllListeners();
+
+            // âœ… ìˆ˜ì •: ìˆ«ì ì¹´ë“œ + ì—°ì‚°ì ì¹´ë“œ ëª¨ë‘ í´ë¦­ ê°€ëŠ¥
+            if (isPlayer && (card is NumberCard || card is OperatorCard))
+            {
                 button.interactable = true;
                 button.onClick.AddListener(HandleClick);
             }
             else
             {
-                // AI Ä«µå³ª Æ¯¼ö Ä«µå(UI ¹öÆ°ÀÌ µû·Î ÀÖÀ½)´Â Å¬¸¯ ºÒ°¡
+                // AI ì¹´ë“œë‚˜ íŠ¹ìˆ˜ ì¹´ë“œëŠ” í´ë¦­ ë¶ˆê°€
                 button.interactable = false;
             }
         }
 
-        /// <summary>
-        /// ÇÃ·¹ÀÌ¾î°¡ ÀÌ Ä«µå¸¦ Å¬¸¯ÇßÀ» ¶§
-        /// </summary>
         private void HandleClick()
         {
-            // [ÇĞ½À Æ÷ÀÎÆ®] ÀÌº¥Æ® ¹ßÇà
-            // ÀÌ Ä«µå°¡ Å¬¸¯µÇ¾úÀ½À» ÄÁÆ®·Ñ·¯(PlayerController)¿¡ ¾Ë¸²
+            // null ì²´í¬
+            if (card == null)
+            {
+                Debug.LogWarning("[CardView] í´ë¦­ëœ ì¹´ë“œê°€ nullì…ë‹ˆë‹¤.");
+                return;
+            }
+
+            // íŠ¹ìˆ˜ ì¹´ë“œ í´ë¦­ ë°©ì§€ (ì´ì¤‘ ì²´í¬)
+            if (card is SpecialCard)
+            {
+                Debug.LogWarning("[CardView] íŠ¹ìˆ˜ ì¹´ë“œëŠ” í´ë¦­í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.");
+                return;
+            }
+
+            // ì´ë²¤íŠ¸ ë°œí–‰
             GameEvents.InvokeCardClicked(this.card);
         }
 
-        /// <summary>
-        /// Ä«µå°¡ »ç¿ëµÇ¾úÀ» ¶§ (PlayerController°¡ ¼ö½Ä¿¡ Ãß°¡ÇßÀ» ¶§)
-        /// </summary>
         private void HandleCardUsed(Card usedCard)
         {
-            // ³»°¡ Å¬¸¯µÈ Ä«µå¶ó¸é ºñÈ°¼ºÈ­
+            // ë‚´ê°€ í´ë¦­ëœ ì¹´ë“œë¼ë©´ ë¹„í™œì„±í™”
             if (usedCard == this.card)
             {
                 button.interactable = false;
+
+                // ì‹œê°ì  í”¼ë“œë°± (ì„ íƒ)
+                backgroundImage.color = Color.gray;
             }
         }
 
-        /// <summary>
-        /// ¶ó¿îµå ½ÃÀÛ ¶Ç´Â ¸®¼Â ½Ã Ä«µå »óÅÂ ÃÊ±âÈ­
-        /// </summary>
         private void ResetCard()
         {
-            // ÇÃ·¹ÀÌ¾îÀÇ ¼ıÀÚ Ä«µå¸¸ ´Ù½Ã È°¼ºÈ­
-            if (isPlayerCard && card is NumberCard)
+            // í”Œë ˆì´ì–´ì˜ ìˆ«ì/ì—°ì‚°ì ì¹´ë“œë§Œ ë‹¤ì‹œ í™œì„±í™”
+            if (isPlayerCard && (card is NumberCard || card is OperatorCard))
             {
                 button.interactable = true;
+
+                // ìƒ‰ìƒ ë³µì›
+                if (card is NumberCard)
+                {
+                    backgroundImage.color = playerNumberCardColor;
+                }
+                else if (card is OperatorCard)
+                {
+                    backgroundImage.color = playerOperatorCardColor;
+                }
             }
         }
     }

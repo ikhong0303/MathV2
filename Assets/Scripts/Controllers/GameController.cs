@@ -1,4 +1,4 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using MathHighLow.Models;
 using MathHighLow.Services;
 using System.Collections;
@@ -6,47 +6,24 @@ using System.Collections;
 namespace MathHighLow.Controllers
 {
     /// <summary>
-    /// [ÇĞ½À Æ÷ÀÎÆ®] ÃÖ»óÀ§ ÄÁÆ®·Ñ·¯ (¸ŞÀÎ)
-    /// 
-    /// °ÔÀÓÀÇ ÀüÃ¼ »ı¸íÁÖ±â(½ÃÀÛ, ÁøÇà, Á¾·á)¸¦ °ü¸®ÇÕ´Ï´Ù.
-    /// ´Ù¸¥ ÄÁÆ®·Ñ·¯µé(Round, Player, AI)À» Á¶Á¤ÇÏ°í,
-    /// °ÔÀÓÀÇ ÇÙ½É »óÅÂ(Á¡¼ö, °ÔÀÓ »óÅÂ)¸¦ ¼ÒÀ¯ÇÕ´Ï´Ù.
+    /// âœ… ìˆ˜ì •: ë² íŒ… ê²€ì¦ ê¸°ëŠ¥ ì¶”ê°€
+    /// - ìµœëŒ€ 5ì›ê¹Œì§€ë§Œ
+    /// - ë³´ìœ  ë¨¸ë‹ˆ ì´ˆê³¼ ë°©ì§€
     /// </summary>
     [RequireComponent(typeof(RoundController))]
     [RequireComponent(typeof(PlayerController))]
     [RequireComponent(typeof(AIController))]
     public class GameController : MonoBehaviour
     {
-        // [¼öÁ¤µÊ] ÀÎ½ºÆåÅÍ¿¡¼­ ¼û±â°í publicÀ¸·Î º¯°æ
         [HideInInspector] public RoundController roundController;
         [HideInInspector] public PlayerController playerController;
         [HideInInspector] public AIController aiController;
 
-        // --- ³»ºÎ ¼­ºñ½º ¹× »óÅÂ ---
-
-        /// <summary>
-        /// °ÔÀÓÀÇ ¸ğµç ¼³Á¤°ª
-        /// </summary>
         private GameConfig config;
-
-        /// <summary>
-        /// °ÔÀÓÀÇ µ¦ °ü¸® ¼­ºñ½º
-        /// </summary>
         private DeckService deckService;
-
-        /// <summary>
-        /// ÇÃ·¹ÀÌ¾îÀÇ ÇöÀç Á¡¼ö(Å©·¹µ÷)
-        /// </summary>
         private int playerCredits;
-
-        /// <summary>
-        /// AIÀÇ ÇöÀç Á¡¼ö(Å©·¹µ÷)
-        /// </summary>
         private int aiCredits;
 
-        /// <summary>
-        /// °ÔÀÓÀÇ ÇöÀç »óÅÂ
-        /// </summary>
         private enum GameState
         {
             Initializing,
@@ -55,42 +32,32 @@ namespace MathHighLow.Controllers
         }
         private GameState currentState;
 
-        #region Unity »ı¸íÁÖ±â ¹× ÀÌº¥Æ® ±¸µ¶
+        #region Unity ìƒëª…ì£¼ê¸° ë° ì´ë²¤íŠ¸ êµ¬ë…
 
         void Awake()
         {
-            // 1. ¼³Á¤ ¹× ¼­ºñ½º »ı¼º
-            // [ÇĞ½À Æ÷ÀÎÆ®] ÀÇÁ¸¼º »ı¼º
-            // °ÔÀÓ¿¡ ÇÊ¿äÇÑ ÇÙ½É °´Ã¼µéÀ» »ı¼ºÇÕ´Ï´Ù.
-            config = GameConfig.Default(); // Models¿¡¼­ ±âº» ¼³Á¤ ·Îµå
+            config = GameConfig.Default();
             deckService = new DeckService(config);
 
-            // 2. ÄÁÆ®·Ñ·¯ ÂüÁ¶ È®ÀÎ (ÀÚµ¿ ÇÒ´ç)
-            // [¼öÁ¤µÊ] RequireComponent°¡ º¸ÀåÇÏ¹Ç·Î, ¹Ù·Î ÇÒ´çÇÕ´Ï´Ù.
             roundController = GetComponent<RoundController>();
             playerController = GetComponent<PlayerController>();
             aiController = GetComponent<AIController>();
 
-            // 3. ÇÏÀ§ ÄÁÆ®·Ñ·¯ ÃÊ±âÈ­ (ÀÇÁ¸¼º ÁÖÀÔ)
-            // [ÇĞ½À Æ÷ÀÎÆ®] ÀÇÁ¸¼º ÁÖÀÔ (Dependency Injection)
-            // GameController°¡ »ı¼ºÇÑ °´Ã¼¸¦ ÇÏÀ§ ÄÁÆ®·Ñ·¯¿¡ Àü´ŞÇÕ´Ï´Ù.
             roundController.Initialize(config, deckService);
-            playerController.Initialize(); // PlayerController´Â GameEvents¸¦ ±¸µ¶
-            aiController.Initialize();     // AIControllerµµ ÀÚÃ¼ ÃÊ±âÈ­
+            playerController.Initialize();
+            aiController.Initialize();
         }
 
         void OnEnable()
         {
-            // [ÇĞ½À Æ÷ÀÎÆ®] ÀÌº¥Æ® ±¸µ¶
-            // GameController´Â "¶ó¿îµå°¡ ³¡³µ´Ù"´Â '°á°ú'¿¡¸¸ °ü½ÉÀÌ ÀÖ½À´Ï´Ù.
             GameEvents.OnRoundEnded += HandleRoundEnded;
+            GameEvents.OnBetChanged += HandleBetChanged; // âœ… ì¶”ê°€
         }
 
         void OnDisable()
         {
-            // [ÇĞ½À Æ÷ÀÎÆ®] ÀÌº¥Æ® ±¸µ¶ ÇØÁ¦
-            // ¿ÀºêÁ§Æ®°¡ ÆÄ±«µÇ°Å³ª ºñÈ°¼ºÈ­µÉ ¶§ ¸Ş¸ğ¸® ´©¼ö¸¦ ¹æÁöÇÕ´Ï´Ù.
             GameEvents.OnRoundEnded -= HandleRoundEnded;
+            GameEvents.OnBetChanged -= HandleBetChanged; // âœ… ì¶”ê°€
         }
 
         void Start()
@@ -100,45 +67,25 @@ namespace MathHighLow.Controllers
 
         #endregion
 
-        #region °ÔÀÓ Èå¸§ Á¦¾î
+        #region ê²Œì„ íë¦„ ì œì–´
 
-        /// <summary>
-        /// °ÔÀÓÀ» ½ÃÀÛÇÕ´Ï´Ù.
-        /// </summary>
         private void StartGame()
         {
             currentState = GameState.Playing;
-
-            // 1. ÃÊ±â Á¡¼ö ¼³Á¤ (Config¿¡¼­ °¡Á®¿È)
             playerCredits = config.StartingCredits;
             aiCredits = config.StartingCredits;
-
-            // 2. UI¿¡ Á¡¼ö º¯°æ ¾Ë¸² (ÀÌº¥Æ® ¹ßÇà)
-            // [ÇĞ½À Æ÷ÀÎÆ®] ÀÌº¥Æ® ¹ßÇà
-            // GameController°¡ Á¡¼ö¸¦ '¼ÒÀ¯'ÇÏ°í, º¯°æµÉ ¶§¸¶´Ù UI¿¡ ¾Ë¸³´Ï´Ù.
             GameEvents.InvokeScoreChanged(playerCredits, aiCredits);
-
-            // 3. Ã¹ ¶ó¿îµå ½ÃÀÛ
-            // RoundController¿¡°Ô ¶ó¿îµå ½ÃÀÛÀ» '¸í·É'
             roundController.StartNewRound();
         }
 
-        /// <summary>
-        /// ¶ó¿îµå Á¾·á ÀÌº¥Æ®¸¦ Ã³¸®ÇÕ´Ï´Ù.
-        /// </summary>
         private void HandleRoundEnded(RoundResult result)
         {
-            // °ÔÀÓ ¿À¹ö »óÅÂ¿¡¼­´Â ´õ ÀÌ»ó ¶ó¿îµå¸¦ ÁøÇàÇÏÁö ¾ÊÀ½
             if (currentState != GameState.Playing) return;
 
-            // 1. °á°ú¿¡ µû¶ó Á¡¼ö °»½Å
             playerCredits += result.PlayerScoreChange;
             aiCredits += result.AIScoreChange;
-
-            // 2. UI¿¡ Á¡¼ö º¯°æ ¾Ë¸² (ÀÌº¥Æ® ¹ßÇà)
             GameEvents.InvokeScoreChanged(playerCredits, aiCredits);
 
-            // 3. °ÔÀÓ ¿À¹ö Á¶°Ç È®ÀÎ
             if (playerCredits <= 0)
             {
                 EndGame("AI");
@@ -147,43 +94,40 @@ namespace MathHighLow.Controllers
             {
                 EndGame("Player");
             }
-            else
-            {
-                // 4. ´ÙÀ½ ¶ó¿îµå ½ÃÀÛ (°á°ú Ç¥½Ã ½Ã°£À» À§ÇØ Àá½Ã ´ë±â)
-                StartCoroutine(NextRoundRoutine());
-            }
+            // âœ… ìë™ ì¬ì‹œì‘ì€ RoundControllerì—ì„œ ì²˜ë¦¬
         }
 
         /// <summary>
-        /// ´ÙÀ½ ¶ó¿îµå¸¦ Àá½Ã ´ë±â ÈÄ ½ÃÀÛÇÕ´Ï´Ù.
+        /// âœ… ì¶”ê°€: ë² íŒ… ê²€ì¦ ë¡œì§
         /// </summary>
-        private IEnumerator NextRoundRoutine()
+        private void HandleBetChanged(int requestedBet)
         {
-            // [ÇĞ½À Æ÷ÀÎÆ®] ÄÚ·çÆ¾À» »ç¿ëÇÑ ½Ã°£ Áö¿¬
-            // °á°ú Ç¥½Ã ½Ã°£À» config¿¡¼­ °¡Á®¿Í ´ë±â
-            yield return new WaitForSeconds(config.ResultsDisplayDuration);
-
-            // ´ë±âÇÏ´Â µ¿¾È °ÔÀÓÀÌ ³¡³ªÁö ¾Ê¾Ò´Ù¸é ´ÙÀ½ ¶ó¿îµå ½ÃÀÛ
-            if (currentState == GameState.Playing)
+            // 1. ìµœëŒ€ ë² íŒ… í™•ì¸ (5ì›)
+            if (requestedBet > config.MaxBet)
             {
-                roundController.StartNewRound();
+                GameEvents.InvokeStatusTextUpdated($"ë² íŒ…ì€ ìµœëŒ€ {config.MaxBet}ì›ê¹Œì§€ë§Œ ê°€ëŠ¥í•©ë‹ˆë‹¤.");
+                GameEvents.InvokeBetChanged(config.MaxBet);
+                return;
             }
+
+            // 2. ë³´ìœ  ë¨¸ë‹ˆ í™•ì¸
+            if (requestedBet > playerCredits)
+            {
+                GameEvents.InvokeStatusTextUpdated($"ë³´ìœ  ë¨¸ë‹ˆ({playerCredits}ì›)ë³´ë‹¤ ë§ì´ ê±¸ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.");
+                int maxAffordable = Mathf.Min(playerCredits, config.MaxBet);
+                GameEvents.InvokeBetChanged(maxAffordable);
+                return;
+            }
+
+            // 3. ì •ìƒ ë² íŒ…
+            Debug.Log($"[GameController] ë² íŒ…: {requestedBet}ì› (ë³´ìœ : {playerCredits}ì›)");
         }
 
-        /// <summary>
-        /// °ÔÀÓÀ» Á¾·áÇÕ´Ï´Ù.
-        /// </summary>
         private void EndGame(string winner)
         {
             currentState = GameState.GameOver;
-
-            // [ÇĞ½À Æ÷ÀÎÆ®] ÀÌº¥Æ® ¹ßÇà
-            // °ÔÀÓÀÌ ³¡³µÀ½À» UI(View)¿Í ´Ù¸¥ ½Ã½ºÅÛ¿¡ ¾Ë¸³´Ï´Ù.
             GameEvents.InvokeGameOver(winner);
-
-            Debug.Log($"[GameController] °ÔÀÓ Á¾·á! ÃÖÁ¾ ½ÂÀÚ: {winner}");
-
-            // (¼±ÅÃ »çÇ×) ¿©±â¼­ °ÔÀÓ Àç½ÃÀÛ ¹öÆ°À» È°¼ºÈ­ÇÒ ¼ö ÀÖÀ½
+            Debug.Log($"[GameController] ê²Œì„ ì¢…ë£Œ! ìµœì¢… ìŠ¹ì: {winner}");
         }
 
         #endregion

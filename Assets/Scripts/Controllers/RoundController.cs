@@ -1,4 +1,4 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using MathHighLow.Models;
@@ -7,25 +7,29 @@ using MathHighLow.Services;
 namespace MathHighLow.Controllers
 {
     /// <summary>
-    /// [ÇĞ½À Æ÷ÀÎÆ®] ÄÚ·çÆ¾À» ÀÌ¿ëÇÑ »óÅÂ ¸Ó½Å
+    /// [í•™ìŠµ í¬ì¸íŠ¸] ì½”ë£¨í‹´ì„ ì´ìš©í•œ ìƒíƒœ ë¨¸ì‹ 
     /// 
-    /// ÇÑ ¶ó¿îµåÀÇ ÀüÃ¼ Èå¸§(Ä«µå ºĞ¹è, ´ë±â, Æò°¡, °á°ú)À» Á¦¾îÇÕ´Ï´Ù.
-    /// ÄÚ·çÆ¾À» »ç¿ëÇÏ¿© ½Ã°£ ±â¹İÀÇ Èå¸§À» °ü¸®ÇÕ´Ï´Ù.
+    /// í•œ ë¼ìš´ë“œì˜ ì „ì²´ íë¦„(ì¹´ë“œ ë¶„ë°°, ëŒ€ê¸°, í‰ê°€, ê²°ê³¼)ì„ ì œì–´í•©ë‹ˆë‹¤.
+    /// 
+    /// âœ… ìƒˆë¡œìš´ ì¹´ë“œ ë¶„ë°° ê·œì¹™:
+    /// 1. ê¸°ë³¸ ì—°ì‚°ì ì¹´ë“œ 3ì¥ (+, -, Ã·) ìë™ ì œê³µ
+    /// 2. ìˆ«ì ì¹´ë“œ 3ì¥ ë¬´ì¡°ê±´ ë³´ì¥
+    /// 3. íŠ¹ìˆ˜ ì¹´ë“œ(Ã—, âˆš) ë‚˜ì˜¤ë©´ â†’ ìˆ«ì ì¹´ë“œ 1ì¥ ì¶”ê°€
+    /// 4. AIë„ ë™ì¼ (ë‚¨ì€ ì¹´ë“œë¡œ)
     /// </summary>
     public class RoundController : MonoBehaviour
     {
-        // --- ÀÇÁ¸¼º (GameController·ÎºÎÅÍ ÁÖÀÔ¹ŞÀ½) ---
+        // --- ì˜ì¡´ì„± (GameControllerë¡œë¶€í„° ì£¼ì…ë°›ìŒ) ---
         private GameConfig config;
         private DeckService deckService;
 
-        // --- ÄÁÆ®·Ñ·¯ ÂüÁ¶ (GameController°¡ °ü¸®) ---
-        // [¼öÁ¤µÊ] [SerializeField] ´ë½Å [HideInInspector] »ç¿ë
+        // --- ì»¨íŠ¸ë¡¤ëŸ¬ ì°¸ì¡° (GameControllerê°€ ê´€ë¦¬) ---
         [HideInInspector]
         public PlayerController playerController;
         [HideInInspector]
         public AIController aiController;
 
-        // --- ¶ó¿îµå »óÅÂ ---
+        // --- ë¼ìš´ë“œ ìƒíƒœ ---
         private Hand playerHand;
         private Hand aiHand;
         private int currentTarget;
@@ -34,54 +38,48 @@ namespace MathHighLow.Controllers
         private enum RoundPhase
         {
             Idle,
-            Dealing,    // Ä«µå ºĞ¹è Áß
-            Waiting,    // ÇÃ·¹ÀÌ¾î ÀÔ·Â ´ë±â
-            Evaluating, // ¼ö½Ä Æò°¡ Áß
-            Results     // °á°ú Ç¥½Ã Áß
+            Dealing,    // ì¹´ë“œ ë¶„ë°° ì¤‘
+            Waiting,    // í”Œë ˆì´ì–´ ì…ë ¥ ëŒ€ê¸°
+            Evaluating, // ìˆ˜ì‹ í‰ê°€ ì¤‘
+            Results     // ê²°ê³¼ í‘œì‹œ ì¤‘
         }
         private RoundPhase currentPhase;
 
-        private bool playerSubmitted; // ÇÃ·¹ÀÌ¾î°¡ Á¦ÃâÇß´ÂÁö
-        private float roundTimer;     // ¶ó¿îµå °æ°ú ½Ã°£
+        private bool playerSubmitted; // í”Œë ˆì´ì–´ ì œì¶œí–ˆëŠ”ì§€
+        private float roundTimer;     // ë¼ìš´ë“œ ê²½ê³¼ ì‹œê°„
 
         /// <summary>
-        /// ÄÁÆ®·Ñ·¯ ÃÊ±âÈ­ (GameController°¡ È£Ãâ)
-        /// [ÇĞ½À Æ÷ÀÎÆ®] ÀÇÁ¸¼º ÁÖÀÔ
+        /// ì»¨íŠ¸ë¡¤ëŸ¬ ì´ˆê¸°í™” (GameControllerê°€ í˜¸ì¶œ)
         /// </summary>
         public void Initialize(GameConfig config, DeckService deckService)
         {
             this.config = config;
             this.deckService = deckService;
 
-            // ¶ó¿îµå¿¡¼­ »ç¿ëÇÒ ¼ÕÆĞ °´Ã¼ »ı¼º
+            // ë¼ìš´ë“œì—ì„œ ì‚¬ìš©í•  ì†íŒ¨ ê°ì²´ ìƒì„±
             playerHand = new Hand();
             aiHand = new Hand();
         }
 
-        #region Unity »ı¸íÁÖ±â ¹× ÀÌº¥Æ® ±¸µ¶
+        #region Unity ìƒëª…ì£¼ê¸° ë° ì´ë²¤íŠ¸ êµ¬ë…
 
-        // [Ãß°¡µÊ] Start ¸Ş¼­µå¿¡¼­ ÄÁÆ®·Ñ·¯ ÂüÁ¶ ÀÚµ¿ ÇÒ´ç
         void Start()
         {
-            // [ÇĞ½À Æ÷ÀÎÆ®] GetComponent¸¦ ÀÌ¿ëÇÑ ÀÚµ¿ ÂüÁ¶
-            // °°Àº °ÔÀÓ ¿ÀºêÁ§Æ®¿¡ ºÙ¾îÀÖ´Â ´Ù¸¥ ÄÁÆ®·Ñ·¯¸¦ ÀÚµ¿À¸·Î Ã£½À´Ï´Ù.
             playerController = GetComponent<PlayerController>();
             aiController = GetComponent<AIController>();
 
             if (playerController == null)
             {
-                Debug.LogError("[RoundController] PlayerController¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù!");
+                Debug.LogError("[RoundController] PlayerControllerë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤!");
             }
             if (aiController == null)
             {
-                Debug.LogError("[RoundController] AIController¸¦ Ã£À» ¼ö ¾ø½À´Ï´Ù!");
+                Debug.LogError("[RoundController] AIControllerë¥¼ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤!");
             }
         }
 
         void OnEnable()
         {
-            // [ÇĞ½À Æ÷ÀÎÆ®] ÀÌº¥Æ® ±¸µ¶
-            // ÇÃ·¹ÀÌ¾î°¡ 'Á¦Ãâ' ¹öÆ°À» ´­·¶À» ¶§¸¦ °¨ÁöÇÕ´Ï´Ù.
             GameEvents.OnSubmitClicked += HandleSubmitClicked;
             GameEvents.OnTargetSelected += HandleTargetSelected;
             GameEvents.OnBetChanged += HandleBetChanged;
@@ -89,7 +87,6 @@ namespace MathHighLow.Controllers
 
         void OnDisable()
         {
-            // [ÇĞ½À Æ÷ÀÎÆ®] ÀÌº¥Æ® ±¸µ¶ ÇØÁ¦
             GameEvents.OnSubmitClicked -= HandleSubmitClicked;
             GameEvents.OnTargetSelected -= HandleTargetSelected;
             GameEvents.OnBetChanged -= HandleBetChanged;
@@ -97,31 +94,21 @@ namespace MathHighLow.Controllers
 
         #endregion
 
-        #region ÀÌº¥Æ® ÇÚµé·¯
+        #region ì´ë²¤íŠ¸ í•¸ë“¤ëŸ¬
 
-        /// <summary>
-        /// Á¦Ãâ ¹öÆ° Å¬¸¯ ÀÌº¥Æ®¸¦ Ã³¸®ÇÕ´Ï´Ù.
-        /// </summary>
         private void HandleSubmitClicked()
         {
-            // ÀÔ·Â ´ë±â »óÅÂÀÌ°í, Á¦Ãâ Àá±İ ½Ã°£ÀÌ Áö³µÀ» ¶§¸¸ À¯È¿
             if (currentPhase == RoundPhase.Waiting && roundTimer >= config.SubmissionUnlockTime)
             {
                 playerSubmitted = true;
             }
         }
 
-        /// <summary>
-        /// ¸ñÇ¥°ª ¼±ÅÃ ÀÌº¥Æ®¸¦ Ã³¸®ÇÕ´Ï´Ù.
-        /// </summary>
         private void HandleTargetSelected(int target)
         {
             currentTarget = target;
         }
 
-        /// <summary>
-        /// º£ÆÃ ±İ¾× º¯°æ ÀÌº¥Æ®¸¦ Ã³¸®ÇÕ´Ï´Ù.
-        /// </summary>
         private void HandleBetChanged(int bet)
         {
             currentBet = bet;
@@ -129,163 +116,325 @@ namespace MathHighLow.Controllers
 
         #endregion
 
-        #region ¶ó¿îµå Èå¸§ Á¦¾î (ÄÚ·çÆ¾)
+        #region ë¼ìš´ë“œ íë¦„ ì œì–´ (ì½”ë£¨í‹´)
 
-        /// <summary>
-        /// »õ ¶ó¿îµå¸¦ ½ÃÀÛÇÕ´Ï´Ù. (GameController°¡ È£Ãâ)
-        /// </summary>
         public void StartNewRound()
         {
-            // ÀÌ¹Ì ´Ù¸¥ ¶ó¿îµå°¡ ÁøÇà ÁßÀÌ¸é Áßº¹ ½ÇÇà ¹æÁö
             if (currentPhase != RoundPhase.Idle && currentPhase != RoundPhase.Results)
             {
-                Debug.LogWarning("[RoundController] ÀÌ¹Ì ¶ó¿îµå°¡ ÁøÇà ÁßÀÔ´Ï´Ù.");
+                Debug.LogWarning("[RoundController] ì´ë¯¸ ë¼ìš´ë“œê°€ ì§„í–‰ ì¤‘ì…ë‹ˆë‹¤.");
                 return;
             }
 
-            // ¶ó¿îµå ÁøÇà ÄÚ·çÆ¾ ½ÃÀÛ
             StartCoroutine(RoundLoopRoutine());
         }
 
-        /// <summary>
-        /// [ÇĞ½À Æ÷ÀÎÆ®] ÄÚ·çÆ¾À» »ç¿ëÇÑ °ÔÀÓ ·çÇÁ
-        /// ¶ó¿îµåÀÇ °¢ ´Ü°è¸¦ ¼øÂ÷ÀûÀ¸·Î ½ÇÇàÇÕ´Ï´Ù.
-        /// </summary>
         private IEnumerator RoundLoopRoutine()
         {
-            // --- 1. Dealing (ºĞ¹è) ---
+            // --- 1. Dealing (ë¶„ë°°) ---
             currentPhase = RoundPhase.Dealing;
+            GameEvents.InvokeStatusTextUpdated("ì¹´ë“œë¥¼ ë¶„ë°°í•©ë‹ˆë‹¤...");
             yield return StartCoroutine(DealingPhase());
 
-            // --- 2. Waiting (´ë±â) ---
+            // âœ… ì¶”ê°€: ë¶„ë°° ì™„ë£Œ í›„ ì•ˆë‚´
+            GameEvents.InvokeStatusTextUpdated("ìˆ˜ì‹ì„ ì™„ì„±í•˜ì„¸ìš”.");
+
+            // --- 2. Waiting (ëŒ€ê¸°) ---
             currentPhase = RoundPhase.Waiting;
             yield return StartCoroutine(WaitingPhase());
 
-            // --- 3. Evaluating (Æò°¡) ---
+            // --- 3. Evaluating (í‰ê°€) ---
             currentPhase = RoundPhase.Evaluating;
-            RoundResult result = EvaluatePhase(); // Æò°¡´Â Áï½Ã ½ÇÇà
+            RoundResult result = EvaluatePhase();
 
-            // --- 4. Results (°á°ú) ---
+            // --- 4. Results (ê²°ê³¼) ---
             currentPhase = RoundPhase.Results;
-
-            // [ÇĞ½À Æ÷ÀÎÆ®] ÀÌº¥Æ® ¹ßÇà
-            // ¶ó¿îµå °á°ú¸¦ GameController¿Í UI(View)¿¡ ¾Ë¸³´Ï´Ù.
             GameEvents.InvokeRoundEnded(result);
+            GameEvents.InvokeStatusTextUpdated("ìˆ˜ì‹ ê²°ê³¼ë¥¼ í™•ì¸í•˜ì„¸ìš”.");
+
+            // âœ… ì¶”ê°€: ê²°ê³¼ í™•ì¸ íƒ€ì´ë¨¸
+            yield return StartCoroutine(ResultsPhase());
+
+            // âœ… ì¶”ê°€: ìë™ìœ¼ë¡œ ë‹¤ìŒ ë¼ìš´ë“œ ì‹œì‘
+            currentPhase = RoundPhase.Idle;
+            StartNewRound();
         }
 
         /// <summary>
-        /// 1´Ü°è: Ä«µå ºĞ¹è ÄÚ·çÆ¾
+        /// âœ… ì™„ì „íˆ ìƒˆë¡œìš´ ì¹´ë“œ ë¶„ë°° ë¡œì§
+        /// 
+        /// 1. ê¸°ë³¸ ì—°ì‚°ì ì¹´ë“œ 3ì¥ (+, -, Ã·) ìë™ ì œê³µ
+        /// 2. ìˆ«ì ì¹´ë“œ 3ì¥ ë¬´ì¡°ê±´ ë³´ì¥
+        /// 3. íŠ¹ìˆ˜ ì¹´ë“œ ë‚˜ì˜¤ë©´ â†’ ìˆ«ì ì¹´ë“œ 1ì¥ ì¶”ê°€
         /// </summary>
         private IEnumerator DealingPhase()
         {
-            // »óÅÂ ÃÊ±âÈ­
+            // ìƒíƒœ ì´ˆê¸°í™”
             playerSubmitted = false;
             roundTimer = 0f;
             playerHand.Clear();
             aiHand.Clear();
-            deckService.BuildSlotDeck(); // »õ ¶ó¿îµå¸¦ À§ÇØ µ¦ ´Ù½Ã ±¸¼º
+            deckService.BuildSlotDeck(); // ë± ì¬êµ¬ì„±
 
-            // UI¿Í PlayerController¿¡ ¶ó¿îµå ½ÃÀÛ ¾Ë¸²
+            // UIì™€ PlayerControllerì— ë¼ìš´ë“œ ì‹œì‘ ì•Œë¦¼
             GameEvents.InvokeRoundStarted();
 
-            // ¸ñÇ¥°ª°ú º£ÆÃ ÃÊ±âÈ­
+            // ëª©í‘œê°’ê³¼ ë² íŒ… ì´ˆê¸°í™”
             currentTarget = config.TargetValues[0];
             currentBet = config.MinBet;
             GameEvents.InvokeTargetSelected(currentTarget);
             GameEvents.InvokeBetChanged(currentBet);
 
-            // [ÇĞ½À Æ÷ÀÎÆ®] ½Ã°£Â÷¸¦ µĞ ÀÌº¥Æ® ¹ßÇà
-            // Ä«µå°¡ ÇÑ Àå¾¿ ³¯¾Æ°¡´Â ¿¬ÃâÀ» À§ÇØ ´ë±â ½Ã°£À» µÓ´Ï´Ù.
-            for (int i = 0; i < config.InitialCardCount; i++)
-            {
-                // ÇÃ·¹ÀÌ¾î Ä«µå ºĞ¹è
-                Card playerCard = deckService.DrawSlotCard();
-                playerHand.AddCard(playerCard);
-                GameEvents.InvokeCardAdded(playerCard, true); // true = isPlayer
+            // ===== í”Œë ˆì´ì–´ ì¹´ë“œ ë¶„ë°° =====
+            yield return StartCoroutine(DealCardsToPlayer());
 
-                // AI Ä«µå ºĞ¹è
-                Card aiCard = (playerCard.GetCardType() == "Special")
-                    ? playerCard.Clone() // Æ¯¼ö Ä«µå´Â µ¿ÀÏÇÏ°Ô
-                    : deckService.DrawRandomNumberCard(); // ¼ıÀÚ Ä«µå´Â ·£´ıÇÏ°Ô
+            // ===== AI ì¹´ë“œ ë¶„ë°° (ë‚¨ì€ ì¹´ë“œë¡œ) =====
+            yield return StartCoroutine(DealCardsToAI());
 
-                aiHand.AddCard(aiCard);
-                GameEvents.InvokeCardAdded(aiCard, false); // false = isPlayer
-
-                // Ä«µå ºĞ¹è °£°İ ´ë±â
-                yield return new WaitForSeconds(config.DealInterval);
-            }
-
-            // ¡¿ Ä«µå È¿°ú Ã³¸®: ¿¬»êÀÚ ºñÈ°¼ºÈ­
-            // (°£¼ÒÈ­: ¿©±â¼­´Â ·£´ıÇÏ°Ô ÇÏ³ª ºñÈ°¼ºÈ­)
-            int multiplyCount = playerHand.GetMultiplyCount();
-            if (multiplyCount > 0)
-            {
-                var ops = playerHand.GetAvailableOperators();
-                if (ops.Count > 0)
-                {
-                    var opToDisable = ops[Random.Range(0, ops.Count)];
-                    playerHand.DisableOperator(opToDisable);
-                    aiHand.DisableOperator(opToDisable);
-
-                    // UI¿¡ ºñÈ°¼ºÈ­ ¾Ë¸²
-                    GameEvents.InvokeOperatorDisabled(opToDisable);
-                }
-            }
-
-            // Player/AI Controller¿¡ ¿Ï¼ºµÈ Hand Á¤º¸ Àü´Ş
+            // Player/AI Controllerì— ì™„ì„±ëœ Hand ì •ë³´ ì „ë‹¬
             playerController.SetHand(playerHand);
-            aiController.PlayTurn(aiHand, currentTarget); // AI´Â Áï½Ã °è»ê ½ÃÀÛ
+            aiController.PlayTurn(aiHand, currentTarget);
         }
 
         /// <summary>
-        /// 2´Ü°è: ÇÃ·¹ÀÌ¾î ÀÔ·Â/Å¸ÀÌ¸Ó ´ë±â ÄÚ·çÆ¾
+        /// âœ… í”Œë ˆì´ì–´ì—ê²Œ ì¹´ë“œ ë¶„ë°°
+        /// </summary>
+        private IEnumerator DealCardsToPlayer()
+        {
+            Debug.Log("[RoundController] === í”Œë ˆì´ì–´ ì¹´ë“œ ë¶„ë°° ì‹œì‘ ===");
+
+            // --- 1ë‹¨ê³„: ê¸°ë³¸ ì—°ì‚°ì ì¹´ë“œ 3ì¥ (+, -, Ã·) ìë™ ì œê³µ ---
+            Debug.Log("[RoundController] 1ë‹¨ê³„: ê¸°ë³¸ ì—°ì‚°ì ì¹´ë“œ 3ì¥ ì œê³µ");
+
+            var basicOperators = new[] {
+                OperatorCard.OperatorType.Add,
+                OperatorCard.OperatorType.Subtract,
+                OperatorCard.OperatorType.Divide
+            };
+
+            foreach (var op in basicOperators)
+            {
+                OperatorCard operatorCard = new OperatorCard(op);
+                playerHand.AddCard(operatorCard);
+                GameEvents.InvokeCardAdded(operatorCard, true);
+
+                yield return new WaitForSeconds(config.DealInterval);
+            }
+
+            // --- 2ë‹¨ê³„: ìˆ«ì ì¹´ë“œ 3ì¥ ë¬´ì¡°ê±´ ë³´ì¥ ---
+            Debug.Log("[RoundController] 2ë‹¨ê³„: ìˆ«ì ì¹´ë“œ 3ì¥ ë½‘ê¸°");
+
+            int numberCardsDrawn = 0;
+            List<Card> specialCards = new List<Card>(); // íŠ¹ìˆ˜ ì¹´ë“œ ì„ì‹œ ì €ì¥
+
+            while (numberCardsDrawn < 3)
+            {
+                Card drawnCard = deckService.DrawSlotCard();
+
+                if (drawnCard.GetCardType() == "Number")
+                {
+                    // ìˆ«ì ì¹´ë“œ: ì¦‰ì‹œ ì¶”ê°€
+                    playerHand.AddCard(drawnCard);
+                    GameEvents.InvokeCardAdded(drawnCard, true);
+                    numberCardsDrawn++;
+
+                    Debug.Log($"[RoundController] ìˆ«ì ì¹´ë“œ: {drawnCard.GetDisplayText()} ({numberCardsDrawn}/3)");
+                }
+                else if (drawnCard.GetCardType() == "Special")
+                {
+                    // íŠ¹ìˆ˜ ì¹´ë“œ: ì €ì¥ (ë‚˜ì¤‘ì— ì¶”ê°€)
+                    specialCards.Add(drawnCard);
+                    Debug.Log($"[RoundController] íŠ¹ìˆ˜ ì¹´ë“œ ë°œê²¬: {drawnCard.GetDisplayText()}");
+                }
+
+                yield return new WaitForSeconds(config.DealInterval);
+            }
+
+            // --- 3ë‹¨ê³„: íŠ¹ìˆ˜ ì¹´ë“œê°€ ìˆìœ¼ë©´ â†’ ìˆ«ì ì¹´ë“œ ì¶”ê°€ë¡œ ë½‘ê¸° ---
+            if (specialCards.Count > 0)
+            {
+                Debug.Log($"[RoundController] 3ë‹¨ê³„: íŠ¹ìˆ˜ ì¹´ë“œ {specialCards.Count}ì¥ â†’ ìˆ«ì ì¹´ë“œ {specialCards.Count}ì¥ ì¶”ê°€");
+
+                foreach (var specialCard in specialCards)
+                {
+                    // íŠ¹ìˆ˜ ì¹´ë“œ ì¶”ê°€
+                    playerHand.AddCard(specialCard);
+                    GameEvents.InvokeCardAdded(specialCard, true);
+
+                    yield return new WaitForSeconds(config.DealInterval);
+
+                    // ìˆ«ì ì¹´ë“œ 1ì¥ ì¶”ê°€ë¡œ ë½‘ê¸°
+                    Card extraNumber = DrawNumberCardOnly();
+                    playerHand.AddCard(extraNumber);
+                    GameEvents.InvokeCardAdded(extraNumber, true);
+
+                    Debug.Log($"[RoundController] íŠ¹ìˆ˜ ì¹´ë“œ {specialCard.GetDisplayText()} â†’ ìˆ«ì ì¶”ê°€ {extraNumber.GetDisplayText()}");
+
+                    yield return new WaitForSeconds(config.DealInterval);
+                }
+            }
+
+            Debug.Log($"[RoundController] === í”Œë ˆì´ì–´ ì¹´ë“œ ë¶„ë°° ì™„ë£Œ: ì´ {playerHand.GetTotalCardCount()}ì¥ ===");
+        }
+
+        /// <summary>
+        /// âœ… AIì—ê²Œ ì¹´ë“œ ë¶„ë°° (í”Œë ˆì´ì–´ì™€ ë™ì¼í•œ ë°©ì‹, ë‚¨ì€ ì¹´ë“œë¡œ)
+        /// </summary>
+        private IEnumerator DealCardsToAI()
+        {
+            Debug.Log("[RoundController] === AI ì¹´ë“œ ë¶„ë°° ì‹œì‘ ===");
+
+            // --- 1ë‹¨ê³„: ê¸°ë³¸ ì—°ì‚°ì ì¹´ë“œ 3ì¥ (+, -, Ã·) ìë™ ì œê³µ ---
+            var basicOperators = new[] {
+                OperatorCard.OperatorType.Add,
+                OperatorCard.OperatorType.Subtract,
+                OperatorCard.OperatorType.Divide
+            };
+
+            foreach (var op in basicOperators)
+            {
+                OperatorCard operatorCard = new OperatorCard(op);
+                aiHand.AddCard(operatorCard);
+                GameEvents.InvokeCardAdded(operatorCard, false);
+
+                yield return new WaitForSeconds(config.DealInterval);
+            }
+
+            // --- 2ë‹¨ê³„: ìˆ«ì ì¹´ë“œ 3ì¥ ë¬´ì¡°ê±´ ë³´ì¥ (ë‚¨ì€ ì¹´ë“œì—ì„œ) ---
+            int numberCardsDrawn = 0;
+            List<Card> specialCards = new List<Card>();
+
+            while (numberCardsDrawn < 3)
+            {
+                Card drawnCard = deckService.DrawSlotCard(); // ë‚¨ì€ ì¹´ë“œì—ì„œ ë½‘ê¸°
+
+                if (drawnCard.GetCardType() == "Number")
+                {
+                    aiHand.AddCard(drawnCard);
+                    GameEvents.InvokeCardAdded(drawnCard, false);
+                    numberCardsDrawn++;
+                }
+                else if (drawnCard.GetCardType() == "Special")
+                {
+                    specialCards.Add(drawnCard);
+                }
+
+                yield return new WaitForSeconds(config.DealInterval);
+            }
+
+            // --- 3ë‹¨ê³„: íŠ¹ìˆ˜ ì¹´ë“œê°€ ìˆìœ¼ë©´ â†’ ìˆ«ì ì¹´ë“œ ì¶”ê°€ë¡œ ë½‘ê¸° ---
+            if (specialCards.Count > 0)
+            {
+                foreach (var specialCard in specialCards)
+                {
+                    aiHand.AddCard(specialCard);
+                    GameEvents.InvokeCardAdded(specialCard, false);
+
+                    yield return new WaitForSeconds(config.DealInterval);
+
+                    Card extraNumber = DrawNumberCardOnly();
+                    aiHand.AddCard(extraNumber);
+                    GameEvents.InvokeCardAdded(extraNumber, false);
+
+                    yield return new WaitForSeconds(config.DealInterval);
+                }
+            }
+
+            Debug.Log($"[RoundController] === AI ì¹´ë“œ ë¶„ë°° ì™„ë£Œ: ì´ {aiHand.GetTotalCardCount()}ì¥ ===");
+        }
+
+        /// <summary>
+        /// âœ… ìˆ«ì ì¹´ë“œë§Œ ë½‘ê¸° (íŠ¹ìˆ˜ ì¹´ë“œê°€ ë‚˜ì˜¬ ë•Œê¹Œì§€ ê³„ì† ë½‘ìŒ)
+        /// </summary>
+        private Card DrawNumberCardOnly()
+        {
+            Card card;
+            do
+            {
+                card = deckService.DrawSlotCard();
+            }
+            while (card.GetCardType() != "Number");
+
+            return card;
+        }
+
+        /// <summary>
+        /// âœ… ìˆ˜ì •: ì œì¶œ ê°€ëŠ¥ ì—¬ë¶€ ì•Œë¦¼ ì¶”ê°€
+        /// 2ë‹¨ê³„: í”Œë ˆì´ì–´ ì…ë ¥/íƒ€ì´ë¨¸ ëŒ€ê¸° ì½”ë£¨í‹´
         /// </summary>
         private IEnumerator WaitingPhase()
         {
+            bool wasSubmitAvailable = false;
+
             while (roundTimer < config.RoundDuration)
             {
-                // ÇÃ·¹ÀÌ¾î°¡ Á¦Ãâ ¹öÆ°À» ´©¸£¸é Áï½Ã Á¾·á
                 if (playerSubmitted)
                 {
                     yield break;
                 }
 
                 roundTimer += Time.deltaTime;
-                yield return null; // 1ÇÁ·¹ÀÓ ´ë±â
+                GameEvents.InvokeTimerUpdated(roundTimer, config.RoundDuration);
+
+                // âœ… ì¶”ê°€: ì œì¶œ ê°€ëŠ¥ ì—¬ë¶€ ì²´í¬ ë° ì´ë²¤íŠ¸ ë°œí–‰
+                bool isSubmitAvailable = roundTimer >= config.SubmissionUnlockTime;
+                if (isSubmitAvailable != wasSubmitAvailable)
+                {
+                    GameEvents.InvokeSubmitAvailabilityChanged(isSubmitAvailable);
+                    wasSubmitAvailable = isSubmitAvailable;
+
+                    if (isSubmitAvailable)
+                    {
+                        Debug.Log($"[RoundController] ì œì¶œ ê°€ëŠ¥! ({config.SubmissionUnlockTime}ì´ˆ ê²½ê³¼)");
+                        // âœ… ì¶”ê°€: ì œì¶œ ê°€ëŠ¥ ì•ˆë‚´ í…ìŠ¤íŠ¸
+                        GameEvents.InvokeStatusTextUpdated("ìˆ˜ì‹ì„ ì™„ì„±í•˜ë©´ ì œì¶œ ë²„íŠ¼ì„ ëˆŒëŸ¬ ì œì¶œí•˜ì„¸ìš”.");
+                    }
+                }
+
+                yield return null;
             }
 
-            // Å¸ÀÓ ¿À¹ö
-            Debug.Log("[RoundController] ½Ã°£ ÃÊ°ú! °­Á¦ Á¦ÃâÇÕ´Ï´Ù.");
+            Debug.Log("[RoundController] ì‹œê°„ ì´ˆê³¼! ê°•ì œ ì œì¶œí•©ë‹ˆë‹¤.");
         }
 
         /// <summary>
-        /// 3´Ü°è: ¼ö½Ä Æò°¡ ¹× °á°ú »ı¼º
+        /// âœ… ì¶”ê°€: ê²°ê³¼ í™•ì¸ í˜ì´ì¦ˆ
+        /// </summary>
+        private IEnumerator ResultsPhase()
+        {
+            float resultsTimer = 0f;
+
+            while (resultsTimer < config.ResultsDisplayDuration)
+            {
+                resultsTimer += Time.deltaTime;
+
+                // âœ… ê²°ê³¼ í™•ì¸ íƒ€ì´ë¨¸ í‘œì‹œ
+                GameEvents.InvokeTimerUpdated(resultsTimer, config.ResultsDisplayDuration);
+
+                yield return null;
+            }
+
+            Debug.Log("[RoundController] ê²°ê³¼ í™•ì¸ ì™„ë£Œ! ë‹¤ìŒ ë¼ìš´ë“œë¥¼ ì‹œì‘í•©ë‹ˆë‹¤.");
+        }
+
+        /// <summary>
+        /// 3ë‹¨ê³„: ìˆ˜ì‹ í‰ê°€ ë° ê²°ê³¼ ìƒì„±
         /// </summary>
         private RoundResult EvaluatePhase()
         {
-            // 1. ÇÃ·¹ÀÌ¾î ¼ö½Ä °¡Á®¿À±â
             Expression playerExpr = playerController.GetExpression();
             var playerValidation = ExpressionValidator.Validate(playerExpr, playerHand);
 
-            // [¼öÁ¤µÊ] ¸ğÈ£ÇÑ ÂüÁ¶ ÇØ°á
             var playerEvaluation = playerValidation.IsValid
                 ? MathHighLow.Models.ExpressionEvaluator.Evaluate(playerExpr)
                 : new MathHighLow.Models.ExpressionEvaluator.EvaluationResult { Success = false, ErrorMessage = playerValidation.ErrorMessage };
 
-            // 2. AI ¼ö½Ä °¡Á®¿À±â
             Expression aiExpr = aiController.GetExpression();
-
-            // [¼öÁ¤µÊ] ¸ğÈ£ÇÑ ÂüÁ¶ ÇØ°á
             var aiEvaluation = MathHighLow.Models.ExpressionEvaluator.Evaluate(aiExpr);
 
-            // 3. °á°ú °´Ã¼ »ı¼º (Models/RoundResult.cs)
             return CreateRoundResult(playerExpr, playerEvaluation, aiExpr, aiEvaluation);
         }
 
-        /// <summary>
-        /// ÃÖÁ¾ °á°ú °´Ã¼¸¦ »ı¼ºÇÕ´Ï´Ù.
-        /// [¼öÁ¤µÊ] ¸ğÈ£ÇÑ ÂüÁ¶ ÇØ°á
-        /// </summary>
         private RoundResult CreateRoundResult(Expression playerExpr, MathHighLow.Models.ExpressionEvaluator.EvaluationResult playerEval,
                                               Expression aiExpr, MathHighLow.Models.ExpressionEvaluator.EvaluationResult aiEval)
         {
@@ -301,11 +450,9 @@ namespace MathHighLow.Controllers
                 AIError = aiEval.Success ? "" : aiEval.ErrorMessage
             };
 
-            // Â÷ÀÌ °è»ê
             result.PlayerDifference = playerEval.Success ? Mathf.Abs(result.PlayerValue - result.Target) : float.PositiveInfinity;
             result.AIDifference = aiEval.Success ? Mathf.Abs(result.AIValue - result.Target) : float.PositiveInfinity;
 
-            // ½ÂÆĞ ÆÇÁ¤
             if (result.PlayerDifference == float.PositiveInfinity && result.AIDifference == float.PositiveInfinity)
             {
                 result.Winner = "Invalid";
