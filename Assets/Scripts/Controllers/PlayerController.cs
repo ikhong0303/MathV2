@@ -420,6 +420,34 @@ namespace MathHighLow.Controllers
             return false;
         }
 
+        /// <summary>
+        /// 현재 수식이 제출 조건(모든 √, × 특수 카드 사용)을 만족하는지 확인합니다.
+        /// </summary>
+        public bool HasUsedRequiredSpecialCards()
+        {
+            if (currentHand == null || currentExpression == null)
+            {
+                return false;
+            }
+
+            if (currentExpression.IsEmpty())
+            {
+                return false;
+            }
+
+            foreach (var specialCard in currentHand.SpecialCards)
+            {
+                if ((specialCard.Type == SpecialCard.SpecialType.Multiply ||
+                     specialCard.Type == SpecialCard.SpecialType.SquareRoot) &&
+                    !specialCard.IsConsumed)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         #endregion
     }
 }
