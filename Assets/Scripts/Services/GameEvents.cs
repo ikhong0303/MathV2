@@ -18,6 +18,7 @@ namespace MathHighLow.Services
         public static event Action<OperatorCard.OperatorType> OnOperatorSelected;
         public static event Action OnSquareRootClicked;
         public static event Action<OperatorCard.OperatorType> OnOperatorDisabled;
+        public static event Action<SpecialCard> OnSpecialCardConsumed;
 
         // ===== 게임 진행 이벤트 =====
 
@@ -63,6 +64,7 @@ namespace MathHighLow.Services
             OnOperatorSelected = null;
             OnSquareRootClicked = null;
             OnOperatorDisabled = null;
+            OnSpecialCardConsumed = null;
             OnRoundStarted = null;
             OnRoundEnded = null;
             OnSubmitClicked = null;
@@ -147,6 +149,11 @@ namespace MathHighLow.Services
         public static void InvokeOperatorDisabled(OperatorCard.OperatorType op)
         {
             OnOperatorDisabled?.Invoke(op);
+        }
+
+        public static void InvokeSpecialCardConsumed(SpecialCard card)
+        {
+            OnSpecialCardConsumed?.Invoke(card);
         }
 
         // ===== ✅ 추가: 새로운 이벤트 발행 메서드 =====

@@ -10,7 +10,7 @@ namespace MathHighLow.Views
     /// ✅ 수정: 모든 카드 타입 처리
     /// - 숫자 카드: 클릭 가능
     /// - 연산자 카드: 클릭 가능 (새로운 기능!)
-    /// - 특수 카드: 클릭 불가 (자동 처리)
+    /// - 특수 카드: × 와 √ 모두 클릭 가능
     /// </summary>
     [RequireComponent(typeof(Button))]
     public class CardView : MonoBehaviour
@@ -34,6 +34,7 @@ namespace MathHighLow.Views
             GameEvents.OnRoundStarted += ResetCard;
             GameEvents.OnResetClicked += ResetCard;
             GameEvents.OnCardClicked += HandleCardUsed;
+            GameEvents.OnSpecialCardConsumed += HandleSpecialCardConsumed;
         }
 
         void OnDisable()
@@ -41,6 +42,7 @@ namespace MathHighLow.Views
             GameEvents.OnRoundStarted -= ResetCard;
             GameEvents.OnResetClicked -= ResetCard;
             GameEvents.OnCardClicked -= HandleCardUsed;
+            GameEvents.OnSpecialCardConsumed -= HandleSpecialCardConsumed;
         }
 
         /// <summary>
@@ -91,8 +93,8 @@ namespace MathHighLow.Views
 
             button.onClick.RemoveAllListeners();
 
-            // ✅ 수정: 숫자 카드 + 연산자 카드 모두 클릭 가능
-            if (isPlayer && (card is NumberCard || card is OperatorCard))
+            // ✅ 수정: 숫자 카드 + 연산자 카드 + 특수 카드(×, √) 클릭 가능
+            if (isPlayer && (card is NumberCard || card is OperatorCard || IsClickableSpecial(card)))
             {
                 button.interactable = true;
                 button.onClick.AddListener(HandleClick);
@@ -113,10 +115,9 @@ namespace MathHighLow.Views
                 return;
             }
 
-            // 특수 카드 클릭 방지 (이중 체크)
-            if (card is SpecialCard)
+            if (card is SpecialCard specialCard && !IsClickableSpecial(card))
             {
-                Debug.LogWarning("[CardView] 특수 카드는 클릭할 수 없습니다.");
+                Debug.LogWarning("[CardView] 클릭할 수 없는 특수 카드입니다.");
                 return;
             }
 
@@ -129,9 +130,17 @@ namespace MathHighLow.Views
             // 내가 클릭된 카드라면 비활성화
             if (usedCard == this.card)
             {
-                button.interactable = false;
+                if (card is SpecialCard specialCard &&
+                    IsClickableSpecial(card) &&
+                    !specialCard.IsConsumed)
+                {
+                    // 특수 카드는 실제로 사용되기 전까지는 다시 클릭 가능
+                    button.interactable = true;
+                    backgroundImage.color = specialCardColor;
+                    return;
+                }
 
-                // 시각적 피드백 (선택)
+                button.interactable = false;
                 backgroundImage.color = Color.gray;
             }
         }
@@ -152,6 +161,33 @@ namespace MathHighLow.Views
                 {
                     backgroundImage.color = playerOperatorCardColor;
                 }
+            }
+            else if (isPlayerCard && card is SpecialCard specialCard &&
+                     IsClickableSpecial(card))
+            {
+                specialCard.ResetUsage();
+                button.interactable = true;
+                backgroundImage.color = specialCardColor;
+            }
+        }
+
+        private bool IsClickableSpecial(Card targetCard)
+        {
+            if (targetCard is SpecialCard specialCard)
+            {
+                return specialCard.Type == SpecialCard.SpecialType.Multiply ||
+                       specialCard.Type == SpecialCard.SpecialType.SquareRoot;
+            }
+
+            return false;
+        }
+
+        private void HandleSpecialCardConsumed(SpecialCard consumedCard)
+        {
+            if (card == consumedCard)
+            {
+                button.interactable = false;
+                backgroundImage.color = Color.gray;
             }
         }
     }
