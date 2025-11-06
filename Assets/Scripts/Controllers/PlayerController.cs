@@ -93,17 +93,7 @@ namespace MathHighLow.Controllers
         {
             isSubmitAvailable = canSubmit;
 
-            if (!HasUnusedNumberCards() && !currentExpression.ExpectingNumber())
-            {
-                if (isSubmitAvailable)
-                {
-                    GameEvents.InvokeStatusTextUpdated("수식을 완성했습니다. 제출 버튼으로 확인해 보세요.");
-                }
-                else
-                {
-                    GameEvents.InvokeStatusTextUpdated("30초가 지나면 제출 버튼이 활성화됩니다.");
-                }
-            }
+            ShowCompletionStatus();
         }
 
         /// <summary>
@@ -196,14 +186,7 @@ namespace MathHighLow.Controllers
 
             if (!hasUnusedNumbers && !currentExpression.ExpectingNumber())
             {
-                if (isSubmitAvailable)
-                {
-                    GameEvents.InvokeStatusTextUpdated("수식을 완성했습니다. 제출 버튼으로 확인해 보세요.");
-                }
-                else
-                {
-                    GameEvents.InvokeStatusTextUpdated("30초가 지나면 제출 버튼이 활성화됩니다.");
-                }
+                ShowCompletionStatus();
             }
             else if (currentExpression.ExpectingNumber())
             {
@@ -418,6 +401,29 @@ namespace MathHighLow.Controllers
             }
 
             return false;
+        }
+
+        private void ShowCompletionStatus()
+        {
+            if (HasUnusedNumberCards() || currentExpression == null || currentExpression.ExpectingNumber())
+            {
+                return;
+            }
+
+            if (!HasUsedRequiredSpecialCards())
+            {
+                GameEvents.InvokeStatusTextUpdated("제출하려면 받은 √와 × 카드를 모두 사용해야 합니다.");
+                return;
+            }
+
+            if (isSubmitAvailable)
+            {
+                GameEvents.InvokeStatusTextUpdated("수식을 완성했습니다. 제출 버튼으로 확인해 보세요.");
+            }
+            else
+            {
+                GameEvents.InvokeStatusTextUpdated("30초가 지나면 제출 버튼이 활성화됩니다.");
+            }
         }
 
         /// <summary>
