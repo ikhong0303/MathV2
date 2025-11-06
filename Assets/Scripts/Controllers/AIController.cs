@@ -18,7 +18,12 @@ namespace MathHighLow.Controllers
         private int targetNumber;
         private Expression bestExpression;
         private float bestDistance;
+        private Expression prioritizedExpression;
+        private float prioritizedDistance;
         private List<OperatorCard.OperatorType> availableOperators;
+        private int requiredSquareRootCount;
+        private int requiredMultiplyCount;
+        private bool shouldPrioritizeSpecialUsage;
 
         public void Initialize()
         {
@@ -28,6 +33,19 @@ namespace MathHighLow.Controllers
         public void PlayTurn(Hand hand, int target)
         {
             bestExpression = FindBestExpression(hand, target);
+
+            var validation = ExpressionValidator.Validate(bestExpression, hand);
+            if (!validation.IsValid)
+            {
+                Debug.LogWarning($"[AI] 탐색된 수식이 유효하지 않습니다: {validation.ErrorMessage}");
+                bestExpression = BuildFallbackExpression(hand);
+
+                var fallbackValidation = ExpressionValidator.Validate(bestExpression, hand);
+                if (!fallbackValidation.IsValid)
+                {
+                    Debug.LogWarning($"[AI] 대체 수식도 규칙을 만족하지 못했습니다: {fallbackValidation.ErrorMessage}");
+                }
+            }
 
             // ✅ 디버그: AI가 선택한 수식 출력
             if (bestExpression != null)
@@ -51,7 +69,16 @@ namespace MathHighLow.Controllers
             targetNumber = target;
             bestExpression = new Expression();
             bestDistance = float.PositiveInfinity;
-            availableOperators = hand.GetAvailableOperators();
+            prioritizedExpression = null;
+            prioritizedDistance = float.PositiveInfinity;
+            requiredSquareRootCount = hand.GetSquareRootCount();
+            requiredMultiplyCount = hand.GetMultiplyCount();
+            shouldPrioritizeSpecialUsage = (requiredSquareRootCount > 0 || requiredMultiplyCount > 0);
+
+            availableOperators = hand.OperatorCards
+                .Where(op => hand.IsOperatorEnabled(op.Operator))
+                .Select(op => op.Operator)
+                .ToList();
 
             // ✅ 디버그: 사용 가능한 연산자 출력
             Debug.Log($"[AI] 사용 가능한 연산자: {string.Join(", ", availableOperators)}");
@@ -61,15 +88,22 @@ namespace MathHighLow.Controllers
                 return new Expression();
 
             // 곱하기와 기본 연산자 검증
-            int multiplyCount = hand.GetMultiplyCount();
-            int remainingSlots = hand.NumberCards.Count - 1 - multiplyCount;
+            int totalSlots = Mathf.Max(0, hand.NumberCards.Count - 1);
+            if (requiredMultiplyCount > totalSlots)
+                return new Expression();
 
-            if (remainingSlots < 0 || (remainingSlots > 0 && availableOperators.Count == 0))
+            int baseOperatorSlots = totalSlots - requiredMultiplyCount;
+            if (baseOperatorSlots > availableOperators.Count)
                 return new Expression();
 
             // 완전 탐색 시작
             var numbers = hand.NumberCards.Select(c => c.Value).ToList();
             PermuteNumbers(numbers, new List<int>(), new Dictionary<int, int>());
+
+            if (shouldPrioritizeSpecialUsage && prioritizedExpression != null)
+            {
+                return prioritizedExpression.Clone();
+            }
 
             return bestExpression.Clone();
         }
@@ -126,7 +160,7 @@ namespace MathHighLow.Controllers
             {
                 // √ 총 개수 확인
                 int totalSqrt = sqrtCounts.Sum();
-                if (totalSqrt == currentHand.GetSquareRootCount())
+                if (totalSqrt == requiredSquareRootCount)
                 {
                     EnumerateOperators(numbers, sqrtCounts);
                 }
@@ -134,8 +168,16 @@ namespace MathHighLow.Controllers
             }
 
             // 현재 숫자에 √를 0개~남은개수만큼 시도
-            int remaining = currentHand.GetSquareRootCount() - sqrtCounts.Sum();
-            for (int count = 0; count <= remaining; count++)
+            int remaining = requiredSquareRootCount - sqrtCounts.Sum();
+            int numbersLeft = numbers.Count - index;
+
+            int maxCountForThisNumber = Mathf.Min(1, remaining);
+            int minCountForThisNumber = Mathf.Max(0, remaining - (numbersLeft - 1));
+
+            if (minCountForThisNumber > maxCountForThisNumber)
+                return;
+
+            for (int count = maxCountForThisNumber; count >= minCountForThisNumber; count--)
             {
                 sqrtCounts.Add(count);
                 DistributeSquareRoots(numbers, index + 1, sqrtCounts);
@@ -149,8 +191,9 @@ namespace MathHighLow.Controllers
         private void EnumerateOperators(List<int> numbers, List<int> sqrtCounts)
         {
             // ✅ 수정: 사용 가능한 연산자 리스트 전달
+            var operatorPool = new List<OperatorCard.OperatorType>(availableOperators);
             AssignOperators(numbers, sqrtCounts, new List<OperatorCard.OperatorType>(),
-                           new List<OperatorCard.OperatorType>(availableOperators), 0, 0);
+                           operatorPool, 0, 0);
         }
 
         /// <summary>
@@ -246,11 +289,89 @@ namespace MathHighLow.Controllers
             float distance = Mathf.Abs(evaluation.Value - targetNumber);
 
             // 더 좋은 결과면 저장
+            if (shouldPrioritizeSpecialUsage && UsesAllRequiredSpecialCards(expr))
+            {
+                if (distance < prioritizedDistance)
+                {
+                    prioritizedDistance = distance;
+                    prioritizedExpression = expr.Clone();
+                }
+            }
+
             if (distance < bestDistance)
             {
                 bestDistance = distance;
                 bestExpression = expr.Clone();
             }
+        }
+
+        /// <summary>
+        /// 탐색에서 실패했을 때 모든 특수 카드를 강제로 사용하는 기본 수식을 구성합니다.
+        /// </summary>
+        private Expression BuildFallbackExpression(Hand hand)
+        {
+            Expression fallback = new Expression();
+
+            var numbers = hand.NumberCards.Select(card => card.Value).ToList();
+            if (numbers.Count == 0)
+            {
+                return fallback;
+            }
+
+            int sqrtRemaining = hand.GetSquareRootCount();
+            int multiplyRemaining = Mathf.Min(hand.GetMultiplyCount(), Mathf.Max(0, numbers.Count - 1));
+
+            Queue<OperatorCard.OperatorType> operatorQueue = new Queue<OperatorCard.OperatorType>(
+                hand.OperatorCards.Select(card => card.Operator));
+
+            for (int i = 0; i < numbers.Count; i++)
+            {
+                bool applySquareRoot = false;
+                if (sqrtRemaining > 0)
+                {
+                    applySquareRoot = true;
+                    sqrtRemaining--;
+                }
+
+                fallback.AddNumber(numbers[i], applySquareRoot);
+
+                if (i < numbers.Count - 1)
+                {
+                    OperatorCard.OperatorType opToAdd;
+
+                    if (multiplyRemaining > 0)
+                    {
+                        opToAdd = OperatorCard.OperatorType.Multiply;
+                        multiplyRemaining--;
+                    }
+                    else if (operatorQueue.Count > 0)
+                    {
+                        opToAdd = operatorQueue.Dequeue();
+                    }
+                    else
+                    {
+                        opToAdd = OperatorCard.OperatorType.Add;
+                    }
+
+                    fallback.AddOperator(opToAdd);
+                }
+            }
+
+            return fallback;
+        }
+
+        /// <summary>
+        /// 현재 손패에서 요구하는 모든 √/× 카드를 사용했는지 확인합니다.
+        /// </summary>
+        private bool UsesAllRequiredSpecialCards(Expression expr)
+        {
+            if (expr == null)
+                return false;
+
+            int usedRoots = expr.HasSquareRoot.Count(hasRoot => hasRoot);
+            int usedMultiply = expr.Operators.Count(op => op == OperatorCard.OperatorType.Multiply);
+
+            return usedRoots == requiredSquareRootCount && usedMultiply == requiredMultiplyCount;
         }
     }
 }

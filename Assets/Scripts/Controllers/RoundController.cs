@@ -382,6 +382,7 @@ namespace MathHighLow.Controllers
         {
             bool wasSubmitAvailable = false;
             bool requirementMessageShown = false;
+            bool earlyRequirementReminderShown = false;
 
             GameEvents.InvokeStatusTextUpdated("30초가 지날 때까지 수식을 완성시키고 AI와 본인 중 누가 이길지 예측해 배팅해 보세요.");
 
@@ -397,6 +398,20 @@ namespace MathHighLow.Controllers
 
                 bool timeUnlocked = roundTimer >= config.SubmissionUnlockTime;
                 bool hasUsedRequiredSpecials = playerController != null && playerController.HasUsedRequiredSpecialCards();
+                bool needsSpecialReminder = playerController != null && playerController.NeedsSpecialCardUsageReminder();
+
+                if (!timeUnlocked && needsSpecialReminder)
+                {
+                    if (!earlyRequirementReminderShown)
+                    {
+                        GameEvents.InvokeStatusTextUpdated("제출하려면 받은 √와 × 카드를 모두 사용해야 합니다.");
+                        earlyRequirementReminderShown = true;
+                    }
+                }
+                else if (!needsSpecialReminder)
+                {
+                    earlyRequirementReminderShown = false;
+                }
 
                 // ✅ 추가: 제출 가능 여부 체크 및 이벤트 발행
                 bool isSubmitAvailable = timeUnlocked && hasUsedRequiredSpecials;
