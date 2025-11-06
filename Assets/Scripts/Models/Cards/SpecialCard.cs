@@ -32,11 +32,17 @@ namespace MathHighLow.Models
         public SpecialType Type { get; set; }
 
         /// <summary>
+        /// 카드가 이번 라운드에서 이미 사용되었는지 여부
+        /// </summary>
+        public bool IsConsumed { get; private set; }
+
+        /// <summary>
         /// 생성자
         /// </summary>
         public SpecialCard(SpecialType type)
         {
             Type = type;
+            IsConsumed = false;
         }
 
         /// <summary>
@@ -66,6 +72,22 @@ namespace MathHighLow.Models
         public override Card Clone()
         {
             return new SpecialCard(Type);
+        }
+
+        /// <summary>
+        /// 카드를 사용 처리합니다.
+        /// </summary>
+        public void Consume()
+        {
+            IsConsumed = true;
+        }
+
+        /// <summary>
+        /// 사용 상태를 초기화합니다.
+        /// </summary>
+        public void ResetUsage()
+        {
+            IsConsumed = false;
         }
 
         /// <summary>
