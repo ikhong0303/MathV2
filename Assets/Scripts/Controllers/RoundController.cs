@@ -136,7 +136,7 @@ namespace MathHighLow.Controllers
             yield return StartCoroutine(DealingPhase());
 
             // ✅ 추가: 분배 완료 후 안내
-            GameEvents.InvokeStatusTextUpdated("수식을 완성하세요.");
+            GameEvents.InvokeStatusTextUpdated("30초가 지날 때까지 수식을 완성시키고 AI와 본인 중 누가 이길지 예측해 배팅해 보세요.");
 
             // --- 2. Waiting (대기) ---
             currentPhase = RoundPhase.Waiting;
@@ -374,6 +374,8 @@ namespace MathHighLow.Controllers
         private IEnumerator WaitingPhase()
         {
             bool wasSubmitAvailable = false;
+
+            GameEvents.InvokeStatusTextUpdated("30초가 지날 때까지 수식을 완성시키고 AI와 본인 중 누가 이길지 예측해 배팅해 보세요.");
 
             while (roundTimer < config.RoundDuration)
             {
