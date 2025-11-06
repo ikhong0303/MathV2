@@ -403,6 +403,31 @@ namespace MathHighLow.Controllers
             return false;
         }
 
+        /// <summary>
+        /// 30초 이전에도 특수 카드 사용을 안내해야 하는지 여부를 확인합니다.
+        /// </summary>
+        public bool NeedsSpecialCardUsageReminder()
+        {
+            if (currentHand == null || currentExpression == null)
+            {
+                return false;
+            }
+
+            if (currentExpression.IsEmpty())
+            {
+                return false;
+            }
+
+            bool expressionComplete = !HasUnusedNumberCards() && !currentExpression.ExpectingNumber();
+
+            if (!expressionComplete)
+            {
+                return false;
+            }
+
+            return !HasUsedRequiredSpecialCards();
+        }
+
         private void ShowCompletionStatus()
         {
             if (HasUnusedNumberCards() || currentExpression == null || currentExpression.ExpectingNumber())
