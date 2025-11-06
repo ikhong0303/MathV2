@@ -137,7 +137,9 @@ MonoBehaviour:
   displayText: {fileID: 2949260509769211335}
   backgroundImage: {fileID: 8248306616431249188}
   button: {fileID: 5313116699726307995}
-  playerCardColor: {r: 1, g: 1, b: 1, a: 1}
+  playerNumberCardColor: {r: 1, g: 1, b: 1, a: 1}
+  playerOperatorCardColor: {r: 0.8, g: 1, b: 0.8, a: 1}
+  specialCardColor: {r: 1, g: 0.9, b: 0.5, a: 1}
   aiCardColor: {r: 0.9, g: 0.9, b: 1, a: 1}
 --- !u!1 &5268648297440393524
 GameObject:
@@ -206,8 +208,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Button
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 0dc0cd81db1984f47b97d034fce68783, type: 2}
+  m_sharedMaterial: {fileID: -5490825173526285607, guid: 0dc0cd81db1984f47b97d034fce68783, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
