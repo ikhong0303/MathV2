@@ -99,7 +99,14 @@ namespace MathHighLow.Controllers
         {
             if (currentPhase == RoundPhase.Waiting && roundTimer >= config.SubmissionUnlockTime)
             {
-                playerSubmitted = true;
+                if (playerController != null && playerController.HasUsedRequiredSpecialCards())
+                {
+                    playerSubmitted = true;
+                }
+                else
+                {
+                    GameEvents.InvokeStatusTextUpdated("제출하려면 받은 √와 × 카드를 모두 사용해야 합니다.");
+                }
             }
         }
 
@@ -374,6 +381,7 @@ namespace MathHighLow.Controllers
         private IEnumerator WaitingPhase()
         {
             bool wasSubmitAvailable = false;
+            bool requirementMessageShown = false;
 
             GameEvents.InvokeStatusTextUpdated("30초가 지날 때까지 수식을 완성시키고 AI와 본인 중 누가 이길지 예측해 배팅해 보세요.");
 
@@ -387,8 +395,11 @@ namespace MathHighLow.Controllers
                 roundTimer += Time.deltaTime;
                 GameEvents.InvokeTimerUpdated(roundTimer, config.RoundDuration);
 
+                bool timeUnlocked = roundTimer >= config.SubmissionUnlockTime;
+                bool hasUsedRequiredSpecials = playerController != null && playerController.HasUsedRequiredSpecialCards();
+
                 // ✅ 추가: 제출 가능 여부 체크 및 이벤트 발행
-                bool isSubmitAvailable = roundTimer >= config.SubmissionUnlockTime;
+                bool isSubmitAvailable = timeUnlocked && hasUsedRequiredSpecials;
                 if (isSubmitAvailable != wasSubmitAvailable)
                 {
                     GameEvents.InvokeSubmitAvailabilityChanged(isSubmitAvailable);
@@ -399,7 +410,21 @@ namespace MathHighLow.Controllers
                         Debug.Log($"[RoundController] 제출 가능! ({config.SubmissionUnlockTime}초 경과)");
                         // ✅ 추가: 제출 가능 안내 텍스트
                         GameEvents.InvokeStatusTextUpdated("수식을 완성하면 제출 버튼을 눌러 제출하세요.");
+                        requirementMessageShown = false;
                     }
+                }
+
+                if (timeUnlocked && !hasUsedRequiredSpecials)
+                {
+                    if (!requirementMessageShown)
+                    {
+                        GameEvents.InvokeStatusTextUpdated("제출하려면 받은 √와 × 카드를 모두 사용해야 합니다.");
+                        requirementMessageShown = true;
+                    }
+                }
+                else if (!timeUnlocked)
+                {
+                    requirementMessageShown = false;
                 }
 
                 yield return null;
