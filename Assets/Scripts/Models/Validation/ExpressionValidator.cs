@@ -43,6 +43,8 @@ namespace MathHighLow.Models
         /// [학습 포인트] 단계별 검증
         /// 여러 규칙을 순서대로 검증하고, 실패하면 즉시 중단합니다.
         /// </summary>
+        private const string GeneralFailureMessage = "수식을 완성하지 못했습니다.";
+
         public static ValidationResult Validate(Expression expression, Hand hand)
         {
             ValidationResult result = new ValidationResult();
@@ -81,8 +83,7 @@ namespace MathHighLow.Models
         {
             if (expression.IsEmpty())
             {
-                result.IsValid = false;
-                result.ErrorMessage = "수식이 비어있습니다.";
+                MarkInvalid(result, "수식이 비어있습니다.");
                 return false;
             }
             return true;
@@ -95,8 +96,7 @@ namespace MathHighLow.Models
         {
             if (!expression.IsComplete())
             {
-                result.IsValid = false;
-                result.ErrorMessage = "수식이 완성되지 않았습니다.";
+                MarkInvalid(result, "수식이 완성되지 않았습니다.");
                 return false;
             }
             return true;
@@ -137,14 +137,12 @@ namespace MathHighLow.Models
 
                 if (used < available)
                 {
-                    result.IsValid = false;
-                    result.ErrorMessage = $"숫자 {number}을(를) {available - used}장 더 사용해야 합니다.";
+                    MarkInvalid(result, $"숫자 {number}을(를) {available - used}장 더 사용해야 합니다.");
                     return false;
                 }
                 else if (used > available)
                 {
-                    result.IsValid = false;
-                    result.ErrorMessage = $"숫자 {number}을(를) {used - available}장 초과 사용했습니다.";
+                    MarkInvalid(result, $"숫자 {number}을(를) {used - available}장 초과 사용했습니다.");
                     return false;
                 }
             }
@@ -167,14 +165,12 @@ namespace MathHighLow.Models
 
             if (usedCount < requiredCount)
             {
-                result.IsValid = false;
-                result.ErrorMessage = $"√를 {requiredCount - usedCount}개 더 사용해야 합니다.";
+                MarkInvalid(result, $"√를 {requiredCount - usedCount}개 더 사용해야 합니다.");
                 return false;
             }
             else if (usedCount > requiredCount)
             {
-                result.IsValid = false;
-                result.ErrorMessage = $"√를 {usedCount - requiredCount}개 초과 사용했습니다.";
+                MarkInvalid(result, $"√를 {usedCount - requiredCount}개 초과 사용했습니다.");
                 return false;
             }
 
@@ -197,14 +193,12 @@ namespace MathHighLow.Models
 
             if (usedCount < requiredCount)
             {
-                result.IsValid = false;
-                result.ErrorMessage = $"×를 {requiredCount - usedCount}개 더 사용해야 합니다.";
+                MarkInvalid(result, $"×를 {requiredCount - usedCount}개 더 사용해야 합니다.");
                 return false;
             }
             else if (usedCount > requiredCount)
             {
-                result.IsValid = false;
-                result.ErrorMessage = $"×를 {usedCount - requiredCount}개 초과 사용했습니다.";
+                MarkInvalid(result, $"×를 {usedCount - requiredCount}개 초과 사용했습니다.");
                 return false;
             }
 
@@ -220,13 +214,24 @@ namespace MathHighLow.Models
             {
                 if (!hand.IsOperatorEnabled(op) && op != OperatorCard.OperatorType.Multiply)
                 {
-                    result.IsValid = false;
-                    result.ErrorMessage = $"비활성화된 연산자를 사용했습니다: {GetOperatorName(op)}";
+                    MarkInvalid(result, $"비활성화된 연산자를 사용했습니다: {GetOperatorName(op)}");
                     return false;
                 }
             }
 
             return true;
+        }
+
+        private static void MarkInvalid(ValidationResult result, string detailedMessage)
+        {
+            result.IsValid = false;
+            result.ErrorMessage = GeneralFailureMessage;
+
+            if (!string.IsNullOrEmpty(detailedMessage))
+            {
+                result.Warnings.Add(detailedMessage);
+                Debug.LogWarning($"[ExpressionValidator] {detailedMessage}");
+            }
         }
 
         /// <summary>
@@ -245,3 +250,4 @@ namespace MathHighLow.Models
         }
     }
 }
+

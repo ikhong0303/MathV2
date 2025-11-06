@@ -142,6 +142,7 @@ namespace MathHighLow.Controllers
             if (!currentExpression.ExpectingNumber())
             {
                 Debug.Log("[PlayerController] 지금은 연산자를 선택해야 합니다.");
+                GameEvents.InvokeStatusTextUpdated("연산자를 선택할 차례입니다.");
                 return;
             }
 
@@ -173,6 +174,21 @@ namespace MathHighLow.Controllers
             // 4. UI 업데이트
             GameEvents.InvokeExpressionUpdated(currentExpression.ToDisplayString());
 
+            bool hasUnusedNumbers = HasUnusedNumberCards();
+
+            if (!hasUnusedNumbers && !currentExpression.ExpectingNumber())
+            {
+                GameEvents.InvokeStatusTextUpdated("수식을 완성했습니다. 제출 버튼으로 확인해 보세요.");
+            }
+            else if (currentExpression.ExpectingNumber())
+            {
+                GameEvents.InvokeStatusTextUpdated("숫자를 선택하세요.");
+            }
+            else
+            {
+                GameEvents.InvokeStatusTextUpdated("연산자를 선택하세요.");
+            }
+
             Debug.Log($"[PlayerController] 숫자 추가: {numberCard.Value}");
         }
 
@@ -185,6 +201,7 @@ namespace MathHighLow.Controllers
             if (currentExpression.ExpectingNumber() || currentExpression.IsEmpty())
             {
                 Debug.Log("[PlayerController] 지금은 숫자를 선택해야 합니다.");
+                GameEvents.InvokeStatusTextUpdated("숫자를 먼저 선택해야 합니다.");
                 return;
             }
 
@@ -232,6 +249,11 @@ namespace MathHighLow.Controllers
 
             // 4. UI 업데이트
             GameEvents.InvokeExpressionUpdated(currentExpression.ToDisplayString());
+
+            if (currentExpression.ExpectingNumber())
+            {
+                GameEvents.InvokeStatusTextUpdated("숫자를 선택하세요.");
+            }
 
             Debug.Log($"[PlayerController] 연산자 추가: {OperatorToText(operatorToAdd)}");
         }
@@ -384,6 +406,24 @@ namespace MathHighLow.Controllers
                 OperatorCard.OperatorType.Divide => "÷",
                 _ => "?"
             };
+        }
+
+        private bool HasUnusedNumberCards()
+        {
+            if (currentHand == null)
+            {
+                return false;
+            }
+
+            foreach (var card in currentHand.NumberCards)
+            {
+                if (!usedCards.TryGetValue(card, out bool used) || !used)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         #endregion
