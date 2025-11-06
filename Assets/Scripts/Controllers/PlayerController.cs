@@ -142,7 +142,7 @@ namespace MathHighLow.Controllers
             if (!currentExpression.ExpectingNumber())
             {
                 Debug.Log("[PlayerController] 지금은 연산자를 선택해야 합니다.");
-                GameEvents.InvokeStatusTextUpdated("연산자를 선택할 차례입니다.");
+                GameEvents.InvokeStatusTextUpdated("지금은 연산자 카드를 눌러주세요.");
                 return;
             }
 
@@ -158,6 +158,7 @@ namespace MathHighLow.Controllers
             // 3. 수식에 숫자 추가 (필요 시 √ 적용)
             currentExpression.AddNumber(numberCard.Value, applySquareRoot);
             usedCards[numberCard] = true;
+            GameEvents.InvokeCardConsumed(numberCard);
 
             if (applySquareRoot)
             {
@@ -182,11 +183,11 @@ namespace MathHighLow.Controllers
             }
             else if (currentExpression.ExpectingNumber())
             {
-                GameEvents.InvokeStatusTextUpdated("숫자를 선택하세요.");
+                GameEvents.InvokeStatusTextUpdated("숫자 카드를 눌러주세요.");
             }
             else
             {
-                GameEvents.InvokeStatusTextUpdated("연산자를 선택하세요.");
+                GameEvents.InvokeStatusTextUpdated("연산자 카드를 눌러주세요.");
             }
 
             Debug.Log($"[PlayerController] 숫자 추가: {numberCard.Value}");
@@ -201,7 +202,7 @@ namespace MathHighLow.Controllers
             if (currentExpression.ExpectingNumber() || currentExpression.IsEmpty())
             {
                 Debug.Log("[PlayerController] 지금은 숫자를 선택해야 합니다.");
-                GameEvents.InvokeStatusTextUpdated("숫자를 먼저 선택해야 합니다.");
+                GameEvents.InvokeStatusTextUpdated("지금은 숫자 카드를 눌러주세요.");
                 return;
             }
 
@@ -235,6 +236,7 @@ namespace MathHighLow.Controllers
             // 3. 수식에 연산자 추가
             currentExpression.AddOperator(operatorToAdd);
             usedCards[operatorCard] = true;
+            GameEvents.InvokeCardConsumed(operatorCard);
 
             if (isMultiplyPending && pendingMultiplyCard != null)
             {
@@ -252,7 +254,7 @@ namespace MathHighLow.Controllers
 
             if (currentExpression.ExpectingNumber())
             {
-                GameEvents.InvokeStatusTextUpdated("숫자를 선택하세요.");
+                GameEvents.InvokeStatusTextUpdated("숫자 카드를 눌러주세요.");
             }
 
             Debug.Log($"[PlayerController] 연산자 추가: {OperatorToText(operatorToAdd)}");

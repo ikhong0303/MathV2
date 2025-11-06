@@ -12,6 +12,7 @@ namespace MathHighLow.Services
 
         public static event Action<Card> OnCardClicked;
         public static event Action<Card, bool> OnCardAdded; // Card, isPlayer
+        public static event Action<Card> OnCardConsumed; // ✅ 새로 추가: 실제로 사용된 카드
 
         // ===== 연산자 관련 이벤트 =====
 
@@ -61,6 +62,7 @@ namespace MathHighLow.Services
         {
             OnCardClicked = null;
             OnCardAdded = null;
+            OnCardConsumed = null;
             OnOperatorSelected = null;
             OnSquareRootClicked = null;
             OnOperatorDisabled = null;
@@ -144,6 +146,11 @@ namespace MathHighLow.Services
         public static void InvokeCardAdded(Card card, bool isPlayer)
         {
             OnCardAdded?.Invoke(card, isPlayer);
+        }
+
+        public static void InvokeCardConsumed(Card card)
+        {
+            OnCardConsumed?.Invoke(card);
         }
 
         public static void InvokeOperatorDisabled(OperatorCard.OperatorType op)

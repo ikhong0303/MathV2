@@ -33,7 +33,7 @@ namespace MathHighLow.Views
         {
             GameEvents.OnRoundStarted += ResetCard;
             GameEvents.OnResetClicked += ResetCard;
-            GameEvents.OnCardClicked += HandleCardUsed;
+            GameEvents.OnCardConsumed += HandleCardConsumed;
             GameEvents.OnSpecialCardConsumed += HandleSpecialCardConsumed;
         }
 
@@ -41,7 +41,7 @@ namespace MathHighLow.Views
         {
             GameEvents.OnRoundStarted -= ResetCard;
             GameEvents.OnResetClicked -= ResetCard;
-            GameEvents.OnCardClicked -= HandleCardUsed;
+            GameEvents.OnCardConsumed -= HandleCardConsumed;
             GameEvents.OnSpecialCardConsumed -= HandleSpecialCardConsumed;
         }
 
@@ -125,7 +125,7 @@ namespace MathHighLow.Views
             GameEvents.InvokeCardClicked(this.card);
         }
 
-        private void HandleCardUsed(Card usedCard)
+        private void HandleCardConsumed(Card usedCard)
         {
             // 내가 클릭된 카드라면 비활성화
             if (usedCard == this.card)
