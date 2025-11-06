@@ -24,8 +24,7 @@ namespace MathHighLow.Controllers
 
         // --- 카드 사용량 추적 ---
         private Dictionary<Card, bool> usedCards; // 모든 카드 추적 (숫자 + 연산자)
-        private bool isMultiplyPending;
-        private SpecialCard pendingMultiplyCard;
+        private bool isSubmitAvailable;
         private bool isSquareRootPending;
         private SpecialCard pendingSquareRootCard;
 
@@ -36,8 +35,7 @@ namespace MathHighLow.Controllers
         {
             currentExpression = new Expression();
             usedCards = new Dictionary<Card, bool>();
-            isMultiplyPending = false;
-            pendingMultiplyCard = null;
+            isSubmitAvailable = false;
             isSquareRootPending = false;
             pendingSquareRootCard = null;
         }
@@ -49,6 +47,7 @@ namespace MathHighLow.Controllers
             GameEvents.OnRoundStarted += HandleRoundStarted;
             GameEvents.OnResetClicked += HandleResetClicked;
             GameEvents.OnCardClicked += HandleCardClicked;
+            GameEvents.OnSubmitAvailabilityChanged += HandleSubmitAvailabilityChanged;
         }
 
         void OnDisable()
@@ -56,6 +55,7 @@ namespace MathHighLow.Controllers
             GameEvents.OnRoundStarted -= HandleRoundStarted;
             GameEvents.OnResetClicked -= HandleResetClicked;
             GameEvents.OnCardClicked -= HandleCardClicked;
+            GameEvents.OnSubmitAvailabilityChanged -= HandleSubmitAvailabilityChanged;
         }
 
         #endregion
@@ -87,6 +87,23 @@ namespace MathHighLow.Controllers
         {
             ResetExpressionState();
             GameEvents.InvokeExpressionUpdated("");
+        }
+
+        private void HandleSubmitAvailabilityChanged(bool canSubmit)
+        {
+            isSubmitAvailable = canSubmit;
+
+            if (!HasUnusedNumberCards() && !currentExpression.ExpectingNumber())
+            {
+                if (isSubmitAvailable)
+                {
+                    GameEvents.InvokeStatusTextUpdated("수식을 완성했습니다. 제출 버튼으로 확인해 보세요.");
+                }
+                else
+                {
+                    GameEvents.InvokeStatusTextUpdated("30초가 지나면 제출 버튼이 활성화됩니다.");
+                }
+            }
         }
 
         /// <summary>
@@ -179,7 +196,14 @@ namespace MathHighLow.Controllers
 
             if (!hasUnusedNumbers && !currentExpression.ExpectingNumber())
             {
-                GameEvents.InvokeStatusTextUpdated("수식을 완성했습니다. 제출 버튼으로 확인해 보세요.");
+                if (isSubmitAvailable)
+                {
+                    GameEvents.InvokeStatusTextUpdated("수식을 완성했습니다. 제출 버튼으로 확인해 보세요.");
+                }
+                else
+                {
+                    GameEvents.InvokeStatusTextUpdated("30초가 지나면 제출 버튼이 활성화됩니다.");
+                }
             }
             else if (currentExpression.ExpectingNumber())
             {
@@ -224,37 +248,11 @@ namespace MathHighLow.Controllers
                 return;
             }
 
-            OperatorCard.OperatorType operatorToAdd = operatorCard.Operator;
-
-            if (isMultiplyPending)
-            {
-                operatorToAdd = OperatorCard.OperatorType.Multiply;
-            }
-            else if (operatorCard.Operator == OperatorCard.OperatorType.Multiply)
-            {
-                int multiplyCount = currentHand.GetMultiplyCount();
-                if (multiplyCount == 0)
-                {
-                    Debug.Log("[PlayerController] × 카드가 손패에 없습니다.");
-                    return;
-                }
-            }
-
             // 3. 수식에 연산자 추가
+            OperatorCard.OperatorType operatorToAdd = operatorCard.Operator;
             currentExpression.AddOperator(operatorToAdd);
             usedCards[operatorCard] = true;
             GameEvents.InvokeCardConsumed(operatorCard);
-
-            if (isMultiplyPending && pendingMultiplyCard != null)
-            {
-                pendingMultiplyCard.Consume();
-                usedCards[pendingMultiplyCard] = true;
-                GameEvents.InvokeSpecialCardConsumed(pendingMultiplyCard);
-                isMultiplyPending = false;
-                pendingMultiplyCard = null;
-
-                GameEvents.InvokeStatusTextUpdated("× 카드가 적용되었습니다. 남은 연산자를 이어서 선택하세요.");
-            }
 
             // 4. UI 업데이트
             GameEvents.InvokeExpressionUpdated(currentExpression.ToDisplayString());
@@ -275,8 +273,7 @@ namespace MathHighLow.Controllers
         {
             currentExpression.Clear();
             usedCards.Clear();
-            isMultiplyPending = false;
-            pendingMultiplyCard = null;
+            isSubmitAvailable = false;
             isSquareRootPending = false;
             pendingSquareRootCard = null;
 
@@ -329,12 +326,6 @@ namespace MathHighLow.Controllers
 
         private void HandleMultiplyCardClicked(SpecialCard multiplyCard)
         {
-            if (isMultiplyPending)
-            {
-                Debug.Log("[PlayerController] 이미 × 카드가 대기 중입니다.");
-                return;
-            }
-
             if (currentExpression.IsEmpty() || currentExpression.ExpectingNumber())
             {
                 Debug.Log("[PlayerController] 숫자를 먼저 선택해야 × 카드를 사용할 수 있습니다.");
@@ -342,27 +333,21 @@ namespace MathHighLow.Controllers
                 return;
             }
 
-            bool hasAvailableOperator = currentHand.OperatorCards.Any(opCard =>
+            if (!HasUnusedNumberCards())
             {
-                if (!usedCards.ContainsKey(opCard))
-                {
-                    usedCards[opCard] = false;
-                }
-
-                return !usedCards[opCard];
-            });
-
-            if (!hasAvailableOperator)
-            {
-                Debug.Log("[PlayerController] 사용할 수 있는 연산자 카드가 없습니다.");
-                GameEvents.InvokeStatusTextUpdated("사용 가능한 연산자 카드가 없어 × 카드를 사용할 수 없습니다.");
+                Debug.Log("[PlayerController] 사용할 수 있는 숫자 카드가 없습니다.");
+                GameEvents.InvokeStatusTextUpdated("남은 숫자가 없어 × 카드를 사용할 수 없습니다.");
                 return;
             }
 
-            isMultiplyPending = true;
-            pendingMultiplyCard = multiplyCard;
-            GameEvents.InvokeStatusTextUpdated("다음에 선택하는 연산자가 × 로 대체됩니다. 희생할 연산자를 선택하세요.");
-            Debug.Log("[PlayerController] × 카드가 준비되었습니다.");
+            currentExpression.AddOperator(OperatorCard.OperatorType.Multiply);
+            multiplyCard.Consume();
+            usedCards[multiplyCard] = true;
+            GameEvents.InvokeSpecialCardConsumed(multiplyCard);
+
+            GameEvents.InvokeExpressionUpdated(currentExpression.ToDisplayString());
+            GameEvents.InvokeStatusTextUpdated("숫자 카드를 눌러주세요.");
+            Debug.Log("[PlayerController] × 카드가 즉시 적용되었습니다.");
         }
 
         private void HandleSquareRootCardClicked(SpecialCard squareRootCard)
