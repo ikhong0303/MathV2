@@ -9,10 +9,7 @@ namespace MathHighLow.Models
     /// 게임에 특별한 효과를 주는 카드입니다.
     /// - Multiply: 연산자 하나를 비활성화하고, × 연산자를 강제로 사용
     /// - SquareRoot: 숫자에 제곱근을 적용
-    /// 
-    /// 실습 과제:
-    /// 1. Square (제곱) 타입을 추가해보세요
-    /// 2. Negate (부호 반전) 타입을 추가해보세요
+
     /// </summary>
     [System.Serializable]
     public class SpecialCard : Card

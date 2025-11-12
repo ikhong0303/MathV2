@@ -221,8 +221,6 @@ namespace MathHighLow.Controllers
             }
 
             // 2. 손패에 연산자 카드가 있는지 확인
-            // (새 구조에서는 기본 연산자를 손패에 카드로 받음)
-            // Hand에 OperatorCard 리스트가 필요함 → Hand.cs 수정 필요!
 
             // 임시: 기본 연산자는 항상 사용 가능하다고 가정
             if (!currentHand.OperatorCards.Contains(operatorCard))

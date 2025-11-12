@@ -13,10 +13,6 @@ namespace MathHighLow.Models
     /// 1. 제곱근 먼저 적용 (√4 = 2)
     /// 2. 연산자 우선순위에 따라 계산
     ///    - 스택 사용: 우선순위 높은 연산자부터 처리
-    /// 
-    /// 실습 과제:
-    /// 1. 괄호 지원 추가
-    /// 2. 계산 과정을 단계별로 보여주는 GetSteps() 메서드 추가
     /// </summary>
     public static class ExpressionEvaluator
     {

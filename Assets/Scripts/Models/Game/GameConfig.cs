@@ -1,8 +1,7 @@
 namespace MathHighLow.Models
 {
     /// <summary>
-    /// [학습 포인트] 게임 설정을 한 곳에 모으기
-    /// 
+
     /// 게임의 모든 설정값을 관리합니다.
     /// 이렇게 하면 밸런스 조정이 쉬워집니다.
     /// </summary>

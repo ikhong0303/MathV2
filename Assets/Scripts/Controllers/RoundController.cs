@@ -10,7 +10,7 @@ namespace MathHighLow.Controllers
     /// 
     /// 한 라운드의 전체 흐름(카드 분배, 대기, 평가, 결과)을 제어합니다.
     /// 
-    /// ✅ 새로운 카드 분배 규칙:
+    /// 카드 분배 규칙:
     /// 1. 기본 연산자 카드 3장 (+, -, ÷) 자동 제공
     /// 2. 숫자/특수 혼합으로 초기 3장을 공개
     /// 3. 숫자 카드가 3장이 될 때까지 즉시 보충 (특수 카드는 그대로 유지)
@@ -148,6 +148,7 @@ namespace MathHighLow.Controllers
             // --- 2. Waiting (대기) ---
             currentPhase = RoundPhase.Waiting;
             yield return StartCoroutine(WaitingPhase());
+            aiController.PlayTurn(aiHand, currentTarget);
 
             // --- 3. Evaluating (평가) ---
             currentPhase = RoundPhase.Evaluating;
@@ -199,7 +200,7 @@ namespace MathHighLow.Controllers
 
             // Player/AI Controller에 완성된 Hand 정보 전달
             playerController.SetHand(playerHand);
-            aiController.PlayTurn(aiHand, currentTarget);
+            
         }
 
         /// <summary>

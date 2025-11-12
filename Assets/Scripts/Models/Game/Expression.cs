@@ -15,9 +15,6 @@ namespace MathHighLow.Models
     /// - Operators: [×, +]
     /// - SquareRoots: [true, false, false] (각 숫자에 √가 있는지)
     /// 
-    /// 실습 과제:
-    /// 1. Reverse() 메서드로 수식을 거꾸로 뒤집기
-    /// 2. ReplaceNumber(index, newValue) 메서드 추가
     /// </summary>
     [System.Serializable]
     public class Expression

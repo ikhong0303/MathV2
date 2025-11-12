@@ -7,9 +7,6 @@ namespace MathHighLow.Models
     /// 
     /// 0~10 사이의 숫자를 나타내는 카드입니다.
     /// 
-    /// 실습 과제:
-    /// 1. 음수를 허용하는 버전으로 확장해보세요
-    /// 2. Value의 유효 범위를 체크하는 SetValue() 메서드를 추가하세요
     /// </summary>
     [System.Serializable]
     public class NumberCard : Card

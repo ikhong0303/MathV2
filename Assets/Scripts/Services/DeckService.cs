@@ -4,16 +4,8 @@ using MathHighLow.Models;  // ✅ 추가됨!
 
 namespace MathHighLow.Services
 {
-    /// <summary>
-    /// [학습 포인트] 서비스 클래스 패턴
-    /// 
     /// 카드 덱을 관리하는 서비스입니다.
     /// 게임에서 사용할 카드를 생성하고 섞고 분배합니다.
-    /// 
-    /// 실습 과제:
-    /// 1. 커스텀 덱 구성 기능 추가
-    /// 2. 덱 리셋 기능 추가
-    /// 3. 남은 카드 개수 확인 기능 추가
     /// </summary>
     public class DeckService
     {

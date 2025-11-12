@@ -9,9 +9,7 @@ namespace MathHighLow.Models
     /// 사칙연산 기호를 나타내는 카드입니다.
     /// +, -, ×, ÷ 네 가지 연산자를 지원합니다.
     /// 
-    /// 실습 과제:
-    /// 1. % (나머지) 연산자를 추가해보세요
-    /// 2. ^ (거듭제곱) 연산자를 추가해보세요
+
     /// </summary>
     [System.Serializable]
     public class OperatorCard : Card

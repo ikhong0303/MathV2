@@ -45,13 +45,6 @@ namespace MathHighLow.Views
         [SerializeField] private Button submitButton;
         [SerializeField] private Button resetButton;
 
-        // ❌ 제거: 연산자 버튼들 (더 이상 사용 안 함)
-        // [SerializeField] private Button addButton;
-        // [SerializeField] private Button subtractButton;
-        // [SerializeField] private Button divideButton;
-        // [SerializeField] private Button multiplyButton;
-        // [SerializeField] private Button sqrtButton;
-
         [Header("결과 패널")]
         [SerializeField] private GameObject resultPanel;
         [SerializeField] private TextMeshProUGUI resultSummaryText;
@@ -74,7 +67,6 @@ namespace MathHighLow.Views
 
             // 플레이어 입력
             GameEvents.OnExpressionUpdated += UpdateExpressionText;
-            GameEvents.OnTargetSelected += HandleTargetSelected;
             GameEvents.OnBetChanged += UpdateBetText;
             GameEvents.OnTimerUpdated += UpdateTimerText;
 
@@ -95,7 +87,6 @@ namespace MathHighLow.Views
             GameEvents.OnCardAdded -= HandleCardAdded;
             GameEvents.OnRoundEnded -= HandleRoundEnded;
             GameEvents.OnExpressionUpdated -= UpdateExpressionText;
-            GameEvents.OnTargetSelected -= HandleTargetSelected;
             GameEvents.OnBetChanged -= UpdateBetText;
             GameEvents.OnTimerUpdated -= UpdateTimerText;
             GameEvents.OnSubmitAvailabilityChanged -= UpdateSubmitAvailability;
@@ -112,13 +103,6 @@ namespace MathHighLow.Views
             // 기본 버튼
             submitButton.onClick.AddListener(() => GameEvents.InvokeSubmit());
             resetButton.onClick.AddListener(() => GameEvents.InvokeReset());
-
-            // ❌ 제거: 연산자 버튼 리스너
-            // addButton.onClick.AddListener(() => GameEvents.InvokeOperatorSelected(OperatorCard.OperatorType.Add));
-            // subtractButton.onClick.AddListener(() => GameEvents.InvokeOperatorSelected(OperatorCard.OperatorType.Subtract));
-            // divideButton.onClick.AddListener(() => GameEvents.InvokeOperatorSelected(OperatorCard.OperatorType.Divide));
-            // multiplyButton.onClick.AddListener(() => GameEvents.InvokeOperatorSelected(OperatorCard.OperatorType.Multiply));
-            // sqrtButton.onClick.AddListener(() => GameEvents.InvokeSquareRootClicked());
 
             // 베팅 버튼
             betIncreaseButton.onClick.AddListener(HandleBetIncrease);
@@ -229,25 +213,6 @@ namespace MathHighLow.Views
             spawnedCards.Add(newCardView.gameObject);
         }
 
-        // ❌ 제거: HandleOperatorDisabled (버튼이 없으므로 불필요)
-        /*
-        private void HandleOperatorDisabled(OperatorCard.OperatorType op)
-        {
-            switch (op)
-            {
-                case OperatorCard.OperatorType.Add:
-                    addButton.interactable = false;
-                    break;
-                case OperatorCard.OperatorType.Subtract:
-                    subtractButton.interactable = false;
-                    break;
-                case OperatorCard.OperatorType.Divide:
-                    divideButton.interactable = false;
-                    break;
-            }
-        }
-        */
-
         private void HandleRoundEnded(RoundResult result)
         {
             // 결과 패널 표시
@@ -261,15 +226,7 @@ namespace MathHighLow.Views
             playerExpressionText.text = string.IsNullOrEmpty(expressionText) ? "..." : expressionText;
         }
 
-        /// <summary>
-        /// ❌ 더 이상 사용 안 함: 색상 변경은 SelectTarget에서 바로 처리
-        /// 이벤트는 다른 시스템(RoundController 등)에 알리는 용도로만 사용
-        /// </summary>
-        private void HandleTargetSelected(int target)
-        {
-            // 색상 변경은 SelectTarget에서 이미 처리됨
-            // 여기서는 아무것도 하지 않음
-        }
+
 
         private void UpdateBetText(int newBet)
         {
@@ -327,7 +284,6 @@ namespace MathHighLow.Views
         private void HandleGameOver(string winner)
         {
             statusText.text = $"게임 종료! 최종 승자: {winner}";
-            // (구현) 모든 버튼 비활성화
         }
 
         /// <summary>
