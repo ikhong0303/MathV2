@@ -55,6 +55,13 @@ namespace MathHighLow.Controllers
             this.config = config;
             this.deckService = deckService;
 
+            // 목표값은 게임 시작 시 한 번만 기본값으로 설정합니다.
+            // 이후에는 결과 확인 중 선택한 값도 다음 라운드까지 유지합니다.
+            if (config.TargetValues != null && config.TargetValues.Length > 0)
+            {
+                currentTarget = config.TargetValues[0];
+            }
+
             // 라운드에서 사용할 손패 객체 생성
             playerHand = new Hand();
             aiHand = new Hand();
@@ -186,8 +193,7 @@ namespace MathHighLow.Controllers
             // UI와 PlayerController에 라운드 시작 알림
             GameEvents.InvokeRoundStarted();
 
-            // 목표값과 베팅 초기화
-            currentTarget = config.TargetValues[0];
+            // 현재 목표값은 유지하고, UI와 판정 상태를 다시 동기화합니다.
             currentBet = config.MinBet;
             GameEvents.InvokeTargetSelected(currentTarget);
             GameEvents.InvokeBetChanged(currentBet);

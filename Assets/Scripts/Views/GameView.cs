@@ -68,6 +68,7 @@ namespace MathHighLow.Views
             // 플레이어 입력
             GameEvents.OnExpressionUpdated += UpdateExpressionText;
             GameEvents.OnBetChanged += UpdateBetText;
+            GameEvents.OnTargetSelected += UpdateTargetSelection;
             GameEvents.OnTimerUpdated += UpdateTimerText;
 
             // 제출 가능 여부
@@ -88,6 +89,7 @@ namespace MathHighLow.Views
             GameEvents.OnRoundEnded -= HandleRoundEnded;
             GameEvents.OnExpressionUpdated -= UpdateExpressionText;
             GameEvents.OnBetChanged -= UpdateBetText;
+            GameEvents.OnTargetSelected -= UpdateTargetSelection;
             GameEvents.OnTimerUpdated -= UpdateTimerText;
             GameEvents.OnSubmitAvailabilityChanged -= UpdateSubmitAvailability;
             GameEvents.OnStatusTextUpdated -= UpdateStatusText; // ✅ 추가
@@ -110,9 +112,9 @@ namespace MathHighLow.Views
 
             // 목표값 버튼
             if (targetButtons.Count > 0 && targetButtons[0] != null)
-                targetButtons[0].onClick.AddListener(() => SelectTarget(0, 1));
+                targetButtons[0].onClick.AddListener(() => SelectTarget(1));
             if (targetButtons.Count > 1 && targetButtons[1] != null)
-                targetButtons[1].onClick.AddListener(() => SelectTarget(1, 20));
+                targetButtons[1].onClick.AddListener(() => SelectTarget(20));
 
             // 초기화
             resultPanel.SetActive(false);
@@ -145,12 +147,16 @@ namespace MathHighLow.Views
             GameEvents.InvokeBetChanged(currentBetDisplay);
         }
 
-        private void SelectTarget(int buttonIndex, int targetValue)
+        private void SelectTarget(int targetValue)
         {
-            // ✅ 수정: 바로 색상 변경
+            // 실제 목표값과 버튼 표시가 같은 이벤트를 통해 변경되도록 합니다.
+            GameEvents.InvokeTargetSelected(targetValue);
+        }
+
+        private void UpdateTargetSelection(int targetValue)
+        {
             currentSelectedTarget = targetValue;
 
-            // 즉시 버튼 색상 업데이트
             for (int i = 0; i < targetButtons.Count; i++)
             {
                 if (targetButtons[i] == null) continue;
@@ -163,11 +169,7 @@ namespace MathHighLow.Views
                 colors.normalColor = (buttonTargetValue == targetValue) ? selectedColor : normalColor;
                 targetButtons[i].colors = colors;
             }
-
-            // 이벤트 발행 (다른 시스템에 알림)
-            GameEvents.InvokeTargetSelected(targetValue);
         }
-
         #endregion
 
         #region 로직 핸들러 (Event -> UI)
